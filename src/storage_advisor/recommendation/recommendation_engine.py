@@ -127,6 +127,7 @@ def _build_cost_optimized_alternative(
     profile: WorkloadProfile,
     scenario: Scenario,
     primary_count: int,
+    primary_required_ids: set[str],
 ) -> AlternativeStrategy:
     scored: list[Recommendation] = []
     for tech, matched in candidates:
@@ -164,6 +165,13 @@ def _build_cost_optimized_alternative(
 
     scored.sort(key=lambda r: r.alignment_score, reverse=True)
     filtered = resolve_conflicts(scored, scenario)
+
+    # Exclude HIGH-complexity techniques unless they are REQUIRED in primary
+    filtered = [
+        r for r in filtered
+        if r.implementation_complexity != "HIGH"
+        or r.technique_id in primary_required_ids
+    ]
 
     n = max(primary_count - 2, 0)
     trimmed = filtered[:n]
@@ -205,10 +213,14 @@ def run_recommendation_engine(
     filtered = resolve_conflicts(scored, scenario)
     strategy = _build_strategy(filtered)
 
+    primary_required_ids = {
+        r.technique_id for r in filtered if r.priority == "REQUIRED"
+    }
     alternatives = [
         _build_lean_alternative(filtered),
         _build_cost_optimized_alternative(
             candidates, problems, profile, scenario, len(filtered),
+            primary_required_ids,
         ),
     ]
 
