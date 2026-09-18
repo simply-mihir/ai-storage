@@ -18,10 +18,12 @@ techniques:
     category: STORAGE
     description: "Reduce data size using lossless or lossy algorithms to lower storage costs and improve I/O throughput."
     solves:
+      - MODERATE_STORAGE_GROWTH
       - HIGH_STORAGE_GROWTH
+      - EXTREME_STORAGE_GROWTH
       - HOT_COLD_DATA_MIX
     applicable_when:
-      storage_growth: [MEDIUM, HIGH]
+      storage_growth: [MEDIUM, MODERATE, HIGH, EXTREME]
     benefits:
       - "Reduces storage footprint by 30-70% depending on data type"
       - "Reduces network transfer costs"
@@ -46,10 +48,12 @@ techniques:
     category: STORAGE
     description: "Eliminate redundant copies of data to reduce storage consumption."
     solves:
+      - MODERATE_STORAGE_GROWTH
       - HIGH_STORAGE_GROWTH
+      - EXTREME_STORAGE_GROWTH
       - HOT_COLD_DATA_MIX
     applicable_when:
-      storage_growth: [MEDIUM, HIGH]
+      storage_growth: [MEDIUM, MODERATE, HIGH, EXTREME]
     benefits:
       - "Significant storage reduction when duplicate data is common"
       - "Reduces backup storage requirements"
@@ -75,7 +79,9 @@ techniques:
     description: "Store unstructured data (images, videos, documents) in a scalable object store rather than a relational database."
     solves:
       - LARGE_UNSTRUCTURED_OBJECT_WORKLOAD
+      - MODERATE_STORAGE_GROWTH
       - HIGH_STORAGE_GROWTH
+      - EXTREME_STORAGE_GROWTH
       - SCALABILITY_PRESSURE
     applicable_when:
       object_storage_pressure: [MEDIUM, HIGH]
@@ -104,11 +110,13 @@ techniques:
     description: "Separate data across hot, warm, and cold storage tiers based on access frequency."
     solves:
       - HOT_COLD_DATA_MIX
+      - MODERATE_STORAGE_GROWTH
       - HIGH_STORAGE_GROWTH
+      - EXTREME_STORAGE_GROWTH
       - LONG_TERM_RETENTION
     applicable_when:
       retention_class: [MEDIUM_TERM, LONG_TERM]
-      storage_growth: [MEDIUM, HIGH]
+      storage_growth: [MEDIUM, MODERATE, HIGH, EXTREME]
     benefits:
       - "Significant cost reduction by moving cold data to cheaper storage"
       - "Maintains fast access for frequently used data"
@@ -134,7 +142,9 @@ techniques:
     solves:
       - LONG_TERM_RETENTION
       - HOT_COLD_DATA_MIX
+      - MODERATE_STORAGE_GROWTH
       - HIGH_STORAGE_GROWTH
+      - EXTREME_STORAGE_GROWTH
     applicable_when:
       retention_class: [LONG_TERM]
     benefits:
@@ -161,11 +171,13 @@ techniques:
     description: "Automate data transitions between storage tiers and eventual deletion based on age or access patterns."
     solves:
       - HOT_COLD_DATA_MIX
+      - MODERATE_STORAGE_GROWTH
       - HIGH_STORAGE_GROWTH
+      - EXTREME_STORAGE_GROWTH
       - LONG_TERM_RETENTION
     applicable_when:
       retention_class: [MEDIUM_TERM, LONG_TERM]
-      storage_growth: [MEDIUM, HIGH]
+      storage_growth: [MEDIUM, MODERATE, HIGH, EXTREME]
     benefits:
       - "Automated cost optimization without manual intervention"
       - "Ensures compliance with retention policies"
@@ -191,10 +203,12 @@ techniques:
     description: "Split large files into smaller fixed-size or content-defined chunks for efficient storage and transfer."
     solves:
       - LARGE_UNSTRUCTURED_OBJECT_WORKLOAD
+      - MODERATE_STORAGE_GROWTH
       - HIGH_STORAGE_GROWTH
+      - EXTREME_STORAGE_GROWTH
     applicable_when:
       object_storage_pressure: [HIGH]
-      storage_growth: [HIGH]
+      storage_growth: [MODERATE, HIGH, EXTREME]
     benefits:
       - "Enables deduplication at chunk level"
       - "Improves upload/download parallelism"
@@ -282,9 +296,12 @@ techniques:
       - SCALABILITY_PRESSURE
       - LARGE_TRANSACTIONAL_DATASET
       - HIGH_WRITE_PRESSURE
+      - HIGH_STORAGE_GROWTH
+      - EXTREME_STORAGE_GROWTH
     applicable_when:
       scalability_pressure: [HIGH]
       write_pressure: [HIGH]
+      storage_growth: [HIGH, EXTREME]
     benefits:
       - "Near-linear write throughput scaling"
       - "Each shard handles a fraction of total load"
@@ -458,11 +475,13 @@ techniques:
     category: PERFORMANCE
     description: "Remove or archive obsolete, expired, or irrelevant data to reduce dataset size."
     solves:
+      - MODERATE_STORAGE_GROWTH
       - HIGH_STORAGE_GROWTH
+      - EXTREME_STORAGE_GROWTH
       - HOT_COLD_DATA_MIX
       - LARGE_TRANSACTIONAL_DATASET
     applicable_when:
-      storage_growth: [MEDIUM, HIGH]
+      storage_growth: [MEDIUM, MODERATE, HIGH, EXTREME]
       retention_class: [MEDIUM_TERM, LONG_TERM]
     benefits:
       - "Reduces storage costs directly"
@@ -547,7 +566,9 @@ techniques:
     description: "Use Apache Parquet columnar file format for efficient analytical data storage and processing."
     solves:
       - HIGH_ANALYTICS_WORKLOAD
+      - MODERATE_STORAGE_GROWTH
       - HIGH_STORAGE_GROWTH
+      - EXTREME_STORAGE_GROWTH
     applicable_when:
       analytics_pressure: [MEDIUM, HIGH]
     benefits:

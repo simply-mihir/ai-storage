@@ -44,6 +44,16 @@ class Strategy(BaseModel):
     general: list[Recommendation] = []
 
 
+class AlternativeStrategy(BaseModel):
+    """An alternative architecture strategy with different trade-offs."""
+
+    label: str
+    focus: str
+    techniques: list[Recommendation]
+    trade_off: str
+    estimated_cost_delta: str
+
+
 class RecommendationResult(BaseModel):
     """Complete output of the recommendation pipeline."""
 
@@ -51,6 +61,7 @@ class RecommendationResult(BaseModel):
     detected_problems: list[dict[str, object]]
     recommendations: list[Recommendation]
     strategy: Strategy
+    alternatives: list[AlternativeStrategy] = []
     assumptions: list[str]
     engine_version: str = "1.0.0"
     knowledge_base_version: str = "1.0.0"

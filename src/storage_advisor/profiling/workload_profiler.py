@@ -20,7 +20,9 @@ from storage_advisor.domain.scenario import DataType, Intensity, Scenario
 class GrowthClass(StrEnum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
+    MODERATE = "MODERATE"
     HIGH = "HIGH"
+    EXTREME = "EXTREME"
 
 
 class PressureLevel(StrEnum):
@@ -60,9 +62,11 @@ class CompliancePresence(StrEnum):
 # ---------------------------------------------------------------------------
 
 # Storage growth (GB/day)
-GROWTH_LOW_UPPER = 10.0       # <= 10 GB/day is modest for most workloads
-GROWTH_MEDIUM_UPPER = 100.0   # 10-100 GB/day is moderate growth
-                              # > 100 GB/day is high growth
+GROWTH_LOW_UPPER = 10.0          # <= 10 GB/day is modest for most workloads
+GROWTH_MEDIUM_UPPER = 100.0      # 10-100 GB/day is moderate growth
+GROWTH_MODERATE_UPPER = 500.0    # 100-500 GB/day is notable but manageable
+GROWTH_HIGH_UPPER = 2000.0       # 500-2000 GB/day demands horizontal scaling
+                                 # >= 2000 GB/day is extreme growth
 
 # Latency (ms)
 LATENCY_ULTRA_LOW_UPPER = 20.0    # sub-20ms demands in-memory / edge caching
@@ -141,7 +145,11 @@ def _classify_storage_growth(daily_growth_gb: float) -> GrowthClass:
         return GrowthClass.LOW
     if daily_growth_gb <= GROWTH_MEDIUM_UPPER:
         return GrowthClass.MEDIUM
-    return GrowthClass.HIGH
+    if daily_growth_gb <= GROWTH_MODERATE_UPPER:
+        return GrowthClass.MODERATE
+    if daily_growth_gb <= GROWTH_HIGH_UPPER:
+        return GrowthClass.HIGH
+    return GrowthClass.EXTREME
 
 
 def _classify_read_pressure(

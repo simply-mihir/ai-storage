@@ -32,13 +32,23 @@ def _problem_ids(scenario: Scenario) -> set[str]:
 
 
 class TestProblemDetection:
-    def test_high_storage_growth(self):
+    def test_moderate_storage_growth(self):
         ids = _problem_ids(_scenario(daily_growth_gb=300))
+        assert ProblemId.MODERATE_STORAGE_GROWTH in ids
+
+    def test_high_storage_growth(self):
+        ids = _problem_ids(_scenario(daily_growth_gb=1000))
         assert ProblemId.HIGH_STORAGE_GROWTH in ids
+
+    def test_extreme_storage_growth(self):
+        ids = _problem_ids(_scenario(daily_growth_gb=3000))
+        assert ProblemId.EXTREME_STORAGE_GROWTH in ids
 
     def test_low_growth_no_problem(self):
         ids = _problem_ids(_scenario(daily_growth_gb=1))
+        assert ProblemId.MODERATE_STORAGE_GROWTH not in ids
         assert ProblemId.HIGH_STORAGE_GROWTH not in ids
+        assert ProblemId.EXTREME_STORAGE_GROWTH not in ids
 
     def test_high_read_latency(self):
         ids = _problem_ids(_scenario(read_intensity="HIGH", latency_requirement_ms=50))
@@ -128,7 +138,7 @@ class TestProblemDetection:
 
 class TestProblemSeverityOrdering:
     def test_critical_before_high(self):
-        s = _scenario(availability_requirement=99.99, daily_growth_gb=300)
+        s = _scenario(availability_requirement=99.99, daily_growth_gb=3000)
         profile = profile_workload(s)
         problems = detect_problems(s, profile)
         severities = [p.severity for p in problems]
@@ -136,7 +146,7 @@ class TestProblemSeverityOrdering:
 
     def test_high_before_medium(self):
         s = _scenario(
-            daily_growth_gb=300, retention_years=7,
+            daily_growth_gb=1000, retention_years=7,
             expected_users=5_000_000, concurrent_users=100_000,
         )
         profile = profile_workload(s)
@@ -152,7 +162,7 @@ class TestProblemEvidence:
         profile = profile_workload(s)
         problems = detect_problems(s, profile)
         growth_problem = next(
-            p for p in problems if p.problem_id == ProblemId.HIGH_STORAGE_GROWTH
+            p for p in problems if p.problem_id == ProblemId.MODERATE_STORAGE_GROWTH
         )
         assert growth_problem.evidence["daily_growth_gb"] == 300
         assert "daily_growth_gb" in growth_problem.source_fields

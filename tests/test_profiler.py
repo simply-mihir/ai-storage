@@ -6,6 +6,8 @@ from storage_advisor.domain.scenario import Scenario
 from storage_advisor.profiling.workload_profiler import (
     GROWTH_LOW_UPPER,
     GROWTH_MEDIUM_UPPER,
+    GROWTH_MODERATE_UPPER,
+    GROWTH_HIGH_UPPER,
     LATENCY_LOW_UPPER,
     LATENCY_MODERATE_UPPER,
     LATENCY_ULTRA_LOW_UPPER,
@@ -52,9 +54,17 @@ class TestStorageGrowthClassification:
         p = profile_workload(_scenario(daily_growth_gb=GROWTH_LOW_UPPER + 0.1))
         assert p.storage_growth == GrowthClass.MEDIUM
 
-    def test_high_growth_boundary(self):
+    def test_moderate_growth_boundary(self):
         p = profile_workload(_scenario(daily_growth_gb=GROWTH_MEDIUM_UPPER + 0.1))
+        assert p.storage_growth == GrowthClass.MODERATE
+
+    def test_high_growth_boundary(self):
+        p = profile_workload(_scenario(daily_growth_gb=GROWTH_MODERATE_UPPER + 0.1))
         assert p.storage_growth == GrowthClass.HIGH
+
+    def test_extreme_growth_boundary(self):
+        p = profile_workload(_scenario(daily_growth_gb=GROWTH_HIGH_UPPER + 0.1))
+        assert p.storage_growth == GrowthClass.EXTREME
 
     def test_zero_growth(self):
         p = profile_workload(_scenario(daily_growth_gb=0))

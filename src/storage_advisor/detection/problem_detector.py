@@ -27,19 +27,43 @@ LARGE_TRANSACTIONAL_STORAGE_GB = 1_000.0
 # Individual detectors — each returns a DetectedProblem or None
 # ---------------------------------------------------------------------------
 
-def _detect_high_storage_growth(
+_GROWTH_PROBLEM_MAP: dict[str, tuple[str, str, str, str]] = {
+    GrowthClass.MODERATE: (
+        ProblemId.MODERATE_STORAGE_GROWTH,
+        "Moderate Storage Growth",
+        ProblemSeverity.MEDIUM,
+        "The workload generates notable daily data that will accumulate over "
+        "time, requiring lifecycle management and cost monitoring.",
+    ),
+    GrowthClass.HIGH: (
+        ProblemId.HIGH_STORAGE_GROWTH,
+        "High Storage Growth",
+        ProblemSeverity.HIGH,
+        "The workload generates large volumes of new data daily, demanding "
+        "horizontal scaling, lifecycle management, and tiered storage.",
+    ),
+    GrowthClass.EXTREME: (
+        ProblemId.EXTREME_STORAGE_GROWTH,
+        "Extreme Storage Growth",
+        ProblemSeverity.CRITICAL,
+        "The workload generates massive data volumes daily, requiring "
+        "aggressive sharding, tiered storage, and automated lifecycle policies.",
+    ),
+}
+
+
+def _detect_storage_growth(
     profile: WorkloadProfile, scenario: Scenario
 ) -> DetectedProblem | None:
-    if profile.storage_growth != GrowthClass.HIGH:
+    entry = _GROWTH_PROBLEM_MAP.get(profile.storage_growth)
+    if entry is None:
         return None
+    problem_id, name, severity, description = entry
     return DetectedProblem(
-        problem_id=ProblemId.HIGH_STORAGE_GROWTH,
-        name="High Storage Growth",
-        severity=ProblemSeverity.HIGH,
-        description=(
-            "The workload generates significant new data daily, which will "
-            "increase storage costs and require lifecycle management."
-        ),
+        problem_id=problem_id,
+        name=name,
+        severity=severity,
+        description=description,
         evidence={
             "daily_growth_gb": scenario.daily_growth_gb,
             "storage_growth_class": profile.storage_growth,
@@ -314,7 +338,7 @@ def _detect_scalability_pressure(
 # ---------------------------------------------------------------------------
 
 _DETECTORS = [
-    _detect_high_storage_growth,
+    _detect_storage_growth,
     _detect_high_read_latency,
     _detect_high_write_pressure,
     _detect_large_unstructured_workload,

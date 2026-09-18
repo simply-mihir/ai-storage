@@ -48,6 +48,12 @@ class TestEndToEndPipeline:
         assert len(result.detected_problems) > 0
         assert result.engine_version == "1.0.0"
 
+        assert result.alternatives is not None
+        assert len(result.alternatives) == 2
+        assert result.alternatives[0].label == "Lean architecture"
+        assert len(result.alternatives[0].techniques) <= len(result.recommendations)
+        assert result.alternatives[1].label == "Cost-optimized"
+
     def test_minimal_scenario_produces_fewer_recommendations(self):
         s = _scenario()
         result = run_recommendation_engine(s)
@@ -70,6 +76,8 @@ class TestEndToEndPipeline:
         assert "recommendations" in parsed
         assert "strategy" in parsed
         assert "detected_problems" in parsed
+        assert "alternatives" in parsed
+        assert len(parsed["alternatives"]) == 2
 
 
 class TestRecommendationPriority:
@@ -204,6 +212,72 @@ class TestImpactEstimation:
         impact = estimate_impact(s, result.recommendations)
         if not has_perf:
             assert impact.latency.estimated_improvement_pct == 0.0
+
+
+class TestGrowthLevelShardingBehavior:
+    """Verify the three-tier growth classification drives sharding priority."""
+
+    def _demo(self, daily_growth_gb: float) -> "RecommendationResult":
+        from storage_advisor.domain.problems import ProblemId
+        from storage_advisor.profiling.workload_profiler import profile_workload
+        from storage_advisor.detection.problem_detector import detect_problems
+        s = _scenario(
+            expected_users=10_000_000, concurrent_users=100_000,
+            current_storage_gb=25_000, daily_growth_gb=daily_growth_gb,
+            data_types=["IMAGES", "DOCUMENTS", "TRANSACTIONS", "LOGS"],
+            structured_data_pct=20, semi_structured_data_pct=20, unstructured_data_pct=60,
+            read_intensity="HIGH", write_intensity="HIGH",
+            latency_requirement_ms=100, availability_requirement=99.99,
+            rto_minutes=60, rpo_minutes=15,
+            retention_years=7, analytics_required=True,
+        )
+        profile = profile_workload(s)
+        problems = detect_problems(s, profile)
+        problem_ids = {p.problem_id for p in problems}
+        result = run_recommendation_engine(s)
+        return s, profile, problem_ids, result
+
+    def test_300gb_triggers_moderate_growth_sharding_recommended(self):
+        s, profile, problem_ids, result = self._demo(300)
+        from storage_advisor.domain.problems import ProblemId
+        from storage_advisor.profiling.workload_profiler import GrowthClass
+        assert profile.storage_growth == GrowthClass.MODERATE
+        assert ProblemId.MODERATE_STORAGE_GROWTH in problem_ids
+        sharding = next(
+            (r for r in result.recommendations if r.technique_id == "sharding"),
+            None,
+        )
+        assert sharding is not None
+        assert sharding.priority == Priority.RECOMMENDED
+
+    def test_1000gb_triggers_high_growth_sharding_required(self):
+        s, profile, problem_ids, result = self._demo(1000)
+        from storage_advisor.domain.problems import ProblemId
+        from storage_advisor.profiling.workload_profiler import GrowthClass
+        assert profile.storage_growth == GrowthClass.HIGH
+        assert ProblemId.HIGH_STORAGE_GROWTH in problem_ids
+        sharding = next(
+            (r for r in result.recommendations if r.technique_id == "sharding"),
+            None,
+        )
+        assert sharding is not None
+        assert sharding.priority == Priority.REQUIRED
+
+    def test_3000gb_triggers_extreme_growth_sharding_required_higher_score(self):
+        _, _, _, result_1000 = self._demo(1000)
+        s, profile, problem_ids, result_3000 = self._demo(3000)
+        from storage_advisor.domain.problems import ProblemId
+        from storage_advisor.profiling.workload_profiler import GrowthClass
+        assert profile.storage_growth == GrowthClass.EXTREME
+        assert ProblemId.EXTREME_STORAGE_GROWTH in problem_ids
+        sharding_3000 = next(
+            r for r in result_3000.recommendations if r.technique_id == "sharding"
+        )
+        sharding_1000 = next(
+            r for r in result_1000.recommendations if r.technique_id == "sharding"
+        )
+        assert sharding_3000.priority == Priority.REQUIRED
+        assert sharding_3000.alignment_score >= sharding_1000.alignment_score
 
 
 class TestAllSampleScenarios:

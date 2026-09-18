@@ -72,18 +72,22 @@ def _determine_priority(
 ) -> Priority:
     """Assign priority based on alignment score and problem severity."""
     problem_map = {p.problem_id: p for p in all_problems}
-    has_critical = any(
-        problem_map.get(pid, None) is not None
-        and problem_map[pid].severity == ProblemSeverity.CRITICAL
-        for pid in matched_problems
-    )
-    has_high = any(
-        problem_map.get(pid, None) is not None
-        and problem_map[pid].severity == ProblemSeverity.HIGH
-        for pid in matched_problems
-    )
+    high_count = 0
+    has_critical = False
+    for pid in matched_problems:
+        p = problem_map.get(pid)
+        if p is None:
+            continue
+        if p.severity == ProblemSeverity.CRITICAL:
+            has_critical = True
+        elif p.severity == ProblemSeverity.HIGH:
+            high_count += 1
 
-    if has_critical or (has_high and alignment_score >= 0.7):
+    if has_critical:
+        return Priority.REQUIRED
+    if high_count >= 2 and alignment_score >= 0.6:
+        return Priority.REQUIRED
+    if high_count >= 1 and alignment_score >= 0.7:
         return Priority.REQUIRED
     if alignment_score >= 0.4:
         return Priority.RECOMMENDED
