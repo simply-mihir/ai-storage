@@ -19,6 +19,7 @@ from storage_advisor.architecture.builder import ArchitectureBuilder
 from storage_advisor.detection.problem_detector import detect_problems
 from storage_advisor.domain.scenario import Scenario
 from storage_advisor.estimation.impact_estimator import estimate_impact
+from storage_advisor.integrations.bedrock import BedrockExplainer
 from storage_advisor.knowledge.technique_catalog import load_techniques
 from storage_advisor.profiling.workload_profiler import profile_workload
 from storage_advisor.recommendation.recommendation_engine import run_recommendation_engine
@@ -33,6 +34,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s — %(mes
 _techniques = load_techniques()
 _builder = ArchitectureBuilder()
 _whatif = WhatIfAnalyzer()
+_explainer = BedrockExplainer()
 _start_time = time.monotonic()
 
 KB_VERSION = "1.0.0"
@@ -78,6 +80,7 @@ class RecommendationRequest(BaseModel):
 class ExplainRequest(BaseModel):
     recommendation_id: str = ""
     recommendation: dict[str, Any] = Field(default_factory=dict)
+    scenario: dict[str, Any] = Field(default_factory=dict)
 
 
 class WhatIfRequest(BaseModel):
@@ -195,8 +198,17 @@ async def get_recommendations(body: RecommendationRequest):
 
 @app.post("/api/v1/explain")
 async def explain_recommendation(body: ExplainRequest):
-    rec = body.recommendation
+    if body.scenario:
+        try:
+            scenario = Scenario(**body.scenario)
+            result = run_recommendation_engine(scenario, _techniques)
+            impact = estimate_impact(scenario, result.recommendations)
+            explanation = _explainer.explain(result, scenario, impact)
+            return {"explanation": explanation.text, "source": explanation.source}
+        except Exception as e:
+            logger.warning("Bedrock explain path failed, falling back to structured: %s", e)
 
+    rec = body.recommendation
     parts = []
     if rec.get("rationale"):
         parts.append(rec["rationale"])
@@ -213,10 +225,7 @@ async def explain_recommendation(body: ExplainRequest):
 
     explanation = " ".join(parts) if parts else "No explanation available for this recommendation."
 
-    return {
-        "explanation": explanation,
-        "source": "structured",
-    }
+    return {"explanation": explanation, "source": "structured"}
 
 
 @app.post("/api/v1/what-if")
@@ -254,7 +263,7 @@ async def health():
             "engine_version": ENGINE_VERSION,
             "kb_version": KB_VERSION,
             "kb_technique_count": len(_techniques),
-            "bedrock_available": False,
+            "bedrock_available": _explainer.available,
             "uptime_seconds": round(uptime, 2),
         }
     except Exception:
