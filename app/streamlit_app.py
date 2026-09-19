@@ -136,11 +136,12 @@ for _k in [
 # Tabs
 # ---------------------------------------------------------------------------
 
-tab_arch, tab_rec, tab_impact, tab_cost, tab_why, tab_analytics, tab_whatif = st.tabs([
+tab_arch, tab_rec, tab_impact, tab_cost, tab_growth, tab_why, tab_analytics, tab_whatif = st.tabs([
     "\U0001f3d7️ Architect",
     "\U0001f4cb Recommendation",
     "\U0001f4ca Impact",
     "\U0001f4b0 Real Cost",
+    "\U0001f4c8 Growth Roadmap",
     "❓ Why?",
     "\U0001f4c8 Analytics",
     "\U0001f504 What-if",
@@ -368,6 +369,51 @@ with tab_rec:
                 st.write(f"**Trade-off:** {alt.trade_off}")
                 st.write(f"**Cost delta:** {alt.estimated_cost_delta}")
 
+        st.divider()
+        st.subheader("Export")
+
+        _ex_col1, _ex_col2 = st.columns(2)
+
+        with _ex_col1:
+            if st.button(
+                "Download Terraform scaffold",
+                use_container_width=True,
+                help="Download main.tf, variables.tf, outputs.tf as a zip",
+            ):
+                from storage_advisor.export.terraform import TerraformGenerator
+                _tf_gen = TerraformGenerator()
+                _tf_export = _tf_gen.generate(
+                    st.session_state.current_scenario,
+                    st.session_state.current_architecture,
+                )
+                st.download_button(
+                    label=f"terraform-scaffold.zip ({_tf_export.resource_count} resources)",
+                    data=_tf_export.zip_bytes,
+                    file_name="terraform-scaffold.zip",
+                    mime="application/zip",
+                    use_container_width=True,
+                )
+                st.caption(_tf_export.summary)
+
+        with _ex_col2:
+            if st.button(
+                "Preview Terraform",
+                use_container_width=True,
+                help="Preview main.tf in the browser",
+            ):
+                from storage_advisor.export.terraform import TerraformGenerator
+                _tf_gen = TerraformGenerator()
+                _tf_export = _tf_gen.generate(
+                    st.session_state.current_scenario,
+                    st.session_state.current_architecture,
+                )
+                with st.expander("main.tf preview", expanded=True):
+                    st.code(_tf_export.files["main.tf"], language="hcl")
+                with st.expander("variables.tf"):
+                    st.code(_tf_export.files["variables.tf"], language="hcl")
+                with st.expander("outputs.tf"):
+                    st.code(_tf_export.files["outputs.tf"], language="hcl")
+
 
 # ===================================================================
 # TAB 3 — Impact
@@ -460,6 +506,72 @@ with tab_impact:
             for a in impact.latency.assumptions:
                 st.write(f"- {a}")
 
+        st.divider()
+        st.subheader("Confidence ranges")
+        st.caption(
+            "Ranges show 25th–75th percentile outcomes from similar "
+            "synthetic scenarios."
+        )
+
+        from storage_advisor.estimation.confidence import ConfidenceEstimator
+
+        @st.cache_resource
+        def _get_confidence_estimator():
+            return ConfidenceEstimator()
+
+        _conf = _get_confidence_estimator()
+        _banded = _conf.estimate_with_bands(
+            st.session_state.current_scenario, impact,
+        )
+
+        _fig_bands = go.Figure()
+        for _bl, _bb in [
+            ("Storage reduction %", _banded.storage_band),
+            ("Cost reduction %", _banded.cost_band),
+            ("Latency improvement %", _banded.latency_band),
+        ]:
+            _fig_bands.add_trace(go.Bar(
+                name=_bl,
+                x=[_bb.high - _bb.low],
+                y=[_bl],
+                base=[_bb.low],
+                orientation="h",
+                marker_color="#93C5FD",
+                showlegend=False,
+                hovertemplate=(
+                    f"{_bl}<br>Range: {_bb.low:.1f}% – {_bb.high:.1f}%"
+                    f"<br>Point estimate: {_bb.point_estimate:.1f}%"
+                    "<extra></extra>"
+                ),
+            ))
+            _fig_bands.add_trace(go.Scatter(
+                x=[_bb.point_estimate],
+                y=[_bl],
+                mode="markers",
+                marker=dict(color="#5B4FDC", size=12, symbol="diamond"),
+                showlegend=False,
+                hovertemplate=(
+                    f"Point estimate: {_bb.point_estimate:.1f}%<extra></extra>"
+                ),
+            ))
+
+        _fig_bands.update_layout(
+            title="Expected outcome ranges (25th–75th percentile)",
+            xaxis_title="Reduction / Improvement %",
+            xaxis=dict(range=[0, 100]),
+            height=250,
+            margin=dict(l=20, r=20, t=40, b=20),
+            barmode="overlay",
+        )
+        st.plotly_chart(_fig_bands, use_container_width=True)
+
+        _bc1, _bc2, _bc3 = st.columns(3)
+        _bc1.caption(f"Storage: {_banded.storage_band.confidence_note}")
+        _bc2.caption(f"Cost: {_banded.cost_band.confidence_note}")
+        _bc3.caption(f"Latency: {_banded.latency_band.confidence_note}")
+
+        st.caption(_banded.disclaimer)
+
 
 # ===================================================================
 # TAB 4 — Real Cost
@@ -530,7 +642,161 @@ with tab_cost:
 
 
 # ===================================================================
-# TAB 5 — Why?
+# TAB 5 — Growth Roadmap
+# ===================================================================
+with tab_growth:
+    if st.session_state.current_scenario is None:
+        st.info("Run an analysis first, then return here to see your growth trajectory.")
+    else:
+        st.subheader("24-month growth trajectory")
+        st.caption("How your architecture evolves as your workload grows.")
+
+        _gr_col1, _gr_col2 = st.columns(2)
+        with _gr_col1:
+            _gr_rate_pct = st.slider(
+                "Monthly user growth rate",
+                1, 20, 5, 1,
+                format="%d%%",
+                help="Compound monthly growth rate applied to user count",
+            )
+        with _gr_col2:
+            _gr_months = st.slider("Months to simulate", 6, 24, 24, 6)
+
+        if st.button("Simulate Growth", type="primary", use_container_width=True):
+            with st.spinner("Simulating growth trajectory..."):
+                from storage_advisor.analytics.trajectory import GrowthTrajectorySimulator
+                _gr_sim = GrowthTrajectorySimulator()
+                st.session_state.trajectory = _gr_sim.simulate(
+                    st.session_state.current_scenario,
+                    months=_gr_months,
+                    user_growth_rate=_gr_rate_pct / 100.0,
+                )
+
+        if "trajectory" not in st.session_state:
+            st.info("Click 'Simulate Growth' to see your architecture roadmap.")
+        else:
+            import pandas as pd
+            traj = st.session_state.trajectory
+
+            with st.container(border=True):
+                st.markdown(traj.summary)
+
+            _k1, _k2, _k3, _k4 = st.columns(4)
+            _k1.metric("Months stable", f"{traj.architecture_stable_until}")
+            _k2.metric("Tipping points", f"{len(traj.tipping_points)}")
+            _k3.metric(
+                "Cost at month 1",
+                f"${traj.snapshots[0].real_cost_usd:,.0f}/mo",
+            )
+            _k4.metric(
+                f"Cost at month {traj.months_simulated}",
+                f"${traj.snapshots[-1].real_cost_usd:,.0f}/mo",
+                delta=f"+${traj.snapshots[-1].real_cost_usd - traj.snapshots[0].real_cost_usd:,.0f}",
+            )
+
+            import plotly.graph_objects as go
+            _months_list = [s.month for s in traj.snapshots]
+
+            _fig_traj = go.Figure()
+            _fig_traj.add_trace(go.Scatter(
+                x=_months_list,
+                y=[s.storage_gb for s in traj.snapshots],
+                name="Raw storage (GB)",
+                line=dict(color="#EF4444", width=2),
+                yaxis="y1",
+            ))
+            _fig_traj.add_trace(go.Scatter(
+                x=_months_list,
+                y=[s.estimated_storage_gb for s in traj.snapshots],
+                name="Optimized storage (GB)",
+                line=dict(color="#10B981", width=2, dash="dash"),
+                yaxis="y1",
+            ))
+            _fig_traj.add_trace(go.Scatter(
+                x=_months_list,
+                y=[s.real_cost_usd for s in traj.snapshots],
+                name="Monthly AWS cost ($)",
+                line=dict(color="#5B4FDC", width=2),
+                yaxis="y2",
+            ))
+
+            for _tp in traj.tipping_points:
+                _tp_color = (
+                    "#EF4444" if _tp.severity == "ESCALATION"
+                    else "#F59E0B" if _tp.severity == "NEW_TECHNIQUE"
+                    else "#6B7280"
+                )
+                _fig_traj.add_vline(
+                    x=_tp.month,
+                    line_dash="dot",
+                    line_color=_tp_color,
+                    annotation_text=_tp.technique_id.replace("_", " "),
+                    annotation_position="top",
+                )
+
+            _fig_traj.update_layout(
+                title="Storage growth and cost trajectory",
+                xaxis_title="Month",
+                yaxis=dict(title="Storage (GB)", side="left"),
+                yaxis2=dict(title="Monthly Cost (USD)", side="right", overlaying="y"),
+                legend=dict(x=0, y=1),
+                hovermode="x unified",
+            )
+            st.plotly_chart(_fig_traj, use_container_width=True)
+
+            st.subheader("Architecture tipping points")
+            if not traj.tipping_points:
+                st.success(
+                    f"Your initial architecture handles the full "
+                    f"{traj.months_simulated}-month growth period without changes."
+                )
+            else:
+                for _tp in traj.tipping_points:
+                    _tp_icon = (
+                        "\U0001f534" if _tp.severity == "ESCALATION"
+                        else "\U0001f7e1" if _tp.severity == "NEW_TECHNIQUE"
+                        else "\U0001f535"
+                    )
+                    with st.expander(f"{_tp_icon} Month {_tp.month} — {_tp.trigger}"):
+                        st.write(f"**What changed:** {_tp.old_state} → {_tp.new_state}")
+                        st.write(f"**Why:** {_tp.description}")
+                        st.write(f"**Severity:** {_tp.severity}")
+
+            st.subheader("Technique evolution over time")
+            _all_techs = list({
+                t for s in traj.snapshots for t in s.top_techniques
+            })
+            if _all_techs:
+                _heatmap_data = pd.DataFrame(
+                    {
+                        t: [
+                            1 if t in s.required_techniques
+                            else 0.5 if t in s.top_techniques
+                            else 0
+                            for s in traj.snapshots
+                        ]
+                        for t in sorted(_all_techs)
+                    },
+                    index=[f"M{s.month}" for s in traj.snapshots],
+                ).T
+
+                _fig_heat = px.imshow(
+                    _heatmap_data,
+                    color_continuous_scale=[
+                        [0, "white"], [0.5, "#93C5FD"], [1, "#5B4FDC"],
+                    ],
+                    title="Technique presence by month (dark = REQUIRED, light = RECOMMENDED)",
+                    labels=dict(x="Month", y="Technique", color="Status"),
+                )
+                _fig_heat.update_layout(coloraxis_showscale=False)
+                st.plotly_chart(_fig_heat, use_container_width=True)
+                st.caption(
+                    "Dark blue = REQUIRED · Light blue = RECOMMENDED · White = not needed"
+                )
+
+
+# ===================================================================
+# TAB 6 — Why?
 # ===================================================================
 with tab_why:
     if st.session_state.current_result is None:

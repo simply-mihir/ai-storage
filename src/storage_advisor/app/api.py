@@ -95,6 +95,17 @@ class RealCostRequest(BaseModel):
     architecture: dict[str, Any] = Field(default_factory=dict)
 
 
+class TrajectoryRequest(BaseModel):
+    scenario: dict[str, Any]
+    months: int = Field(default=24, ge=1, le=60)
+    user_growth_rate: float = Field(default=0.05, ge=0.0, le=1.0)
+
+
+class TerraformRequest(BaseModel):
+    scenario: dict[str, Any]
+    architecture: dict[str, Any] = Field(default_factory=dict)
+
+
 # ---------------------------------------------------------------------------
 # App setup
 # ---------------------------------------------------------------------------
@@ -308,6 +319,80 @@ async def real_cost(body: RealCostRequest):
         "pricing_date": estimate.pricing_date,
         "source": estimate.source,
         "disclaimer": estimate.disclaimer,
+    }
+
+
+@app.post("/api/v1/trajectory")
+async def trajectory(body: TrajectoryRequest):
+    try:
+        scenario = Scenario(**body.scenario)
+    except (ValidationError, Exception) as e:
+        return JSONResponse(status_code=400, content={"error": f"Invalid scenario: {e}"})
+
+    from storage_advisor.analytics.trajectory import GrowthTrajectorySimulator
+    simulator = GrowthTrajectorySimulator()
+    result = simulator.simulate(
+        scenario, months=body.months, user_growth_rate=body.user_growth_rate,
+    )
+
+    return {
+        "months_simulated": result.months_simulated,
+        "architecture_stable_until": result.architecture_stable_until,
+        "tipping_points": [
+            {
+                "month": tp.month,
+                "trigger": tp.trigger,
+                "old_state": tp.old_state,
+                "new_state": tp.new_state,
+                "technique_id": tp.technique_id,
+                "severity": tp.severity,
+                "description": tp.description,
+            }
+            for tp in result.tipping_points
+        ],
+        "cost_at_month_1": result.starting_cost_usd,
+        "cost_at_month_24": result.ending_cost_usd,
+        "summary": result.summary,
+        "snapshots": [
+            {
+                "month": s.month,
+                "users": s.users,
+                "storage_gb": s.storage_gb,
+                "problems": s.problems,
+                "top_techniques": s.top_techniques,
+                "required_techniques": s.required_techniques,
+                "architecture_services": s.architecture_services,
+                "real_cost_usd": s.real_cost_usd,
+                "latency_ms": s.latency_ms,
+            }
+            for s in result.snapshots
+        ],
+    }
+
+
+@app.post("/api/v1/export/terraform")
+async def export_terraform(body: TerraformRequest):
+    try:
+        scenario = Scenario(**body.scenario)
+    except (ValidationError, Exception) as e:
+        return JSONResponse(status_code=400, content={"error": f"Invalid scenario: {e}"})
+
+    if body.architecture:
+        from storage_advisor.architecture.builder import ArchitectureOutput
+        architecture = ArchitectureOutput(**body.architecture)
+    else:
+        result = run_recommendation_engine(scenario, _techniques)
+        architecture = _builder.build(scenario, result)
+
+    from storage_advisor.export.terraform import TerraformGenerator
+    gen = TerraformGenerator()
+    export = gen.generate(scenario, architecture)
+
+    return {
+        "files": export.files,
+        "resource_count": export.resource_count,
+        "component_count": export.component_count,
+        "summary": export.summary,
     }
 
 
