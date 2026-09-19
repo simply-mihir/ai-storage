@@ -20,6 +20,7 @@ from storage_advisor.detection.problem_detector import detect_problems
 from storage_advisor.domain.scenario import Scenario
 from storage_advisor.estimation.impact_estimator import estimate_impact
 from storage_advisor.integrations.bedrock import BedrockExplainer
+from storage_advisor.integrations.pricing import AWSPricingClient
 from storage_advisor.knowledge.technique_catalog import load_techniques
 from storage_advisor.profiling.workload_profiler import profile_workload
 from storage_advisor.recommendation.recommendation_engine import run_recommendation_engine
@@ -35,6 +36,7 @@ _techniques = load_techniques()
 _builder = ArchitectureBuilder()
 _whatif = WhatIfAnalyzer()
 _explainer = BedrockExplainer()
+_pricing = AWSPricingClient()
 _start_time = time.monotonic()
 
 KB_VERSION = "1.0.0"
@@ -86,6 +88,11 @@ class ExplainRequest(BaseModel):
 class WhatIfRequest(BaseModel):
     baseline_scenario: dict[str, Any]
     modified_scenario: dict[str, Any]
+
+
+class RealCostRequest(BaseModel):
+    scenario: dict[str, Any]
+    architecture: dict[str, Any] = Field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -251,6 +258,56 @@ async def what_if(body: WhatIfRequest):
         "cost_delta_pct": result.cost_delta_pct,
         "latency_delta_pct": result.latency_delta_pct,
         "summary": result.summary,
+    }
+
+
+@app.get("/api/v1/pricing")
+async def get_pricing(region: str = "us-east-1"):
+    client = AWSPricingClient(region=region) if region != _pricing.region else _pricing
+    return {
+        "s3_per_gb": client.get_s3_price_per_gb(),
+        "elasticache_per_hour": client.get_elasticache_price_per_hour(),
+        "rds_per_hour": client.get_rds_price_per_hour(),
+        "glacier_per_gb": client.get_glacier_price_per_gb(),
+        "source": "aws_list_price",
+        "region": region,
+        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@app.post("/api/v1/real-cost")
+async def real_cost(body: RealCostRequest):
+    try:
+        scenario = Scenario(**body.scenario)
+    except (ValidationError, Exception) as e:
+        return JSONResponse(status_code=400, content={"error": f"Invalid scenario: {e}"})
+
+    if body.architecture:
+        from storage_advisor.architecture.builder import ArchitectureOutput
+        architecture = ArchitectureOutput(**body.architecture)
+    else:
+        result = run_recommendation_engine(scenario, _techniques)
+        architecture = _builder.build(scenario, result)
+
+    estimate = _pricing.calculate_monthly_architecture_cost(architecture, scenario)
+    return {
+        "line_items": [
+            {
+                "component": li.component,
+                "service": li.service,
+                "label": li.label,
+                "monthly_cost_usd": li.monthly_cost_usd,
+                "unit_price": li.unit_price,
+                "unit": li.unit,
+                "quantity": li.quantity,
+            }
+            for li in estimate.line_items
+        ],
+        "total_monthly_usd": estimate.total_monthly_usd,
+        "region": estimate.region,
+        "pricing_date": estimate.pricing_date,
+        "source": estimate.source,
+        "disclaimer": estimate.disclaimer,
     }
 
 

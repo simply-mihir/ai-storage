@@ -14,4 +14,4 @@ def test_app_loads():
 def test_tab_count():
     at = AppTest.from_file(_APP_PATH, default_timeout=30)
     at.run()
-    assert len(at.tabs) == 6
+    assert len(at.tabs) == 7

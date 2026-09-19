@@ -9,7 +9,17 @@ import yaml
 from storage_advisor.domain.techniques import Technique
 from storage_advisor.exceptions import ConfigurationError
 
-_DEFAULT_KB_PATH = Path(__file__).resolve().parents[3] / "configs" / "techniques.yaml"
+def _find_kb_path() -> Path:
+    candidates = [
+        Path(__file__).resolve().parents[3] / "configs" / "techniques.yaml",
+        Path.cwd() / "configs" / "techniques.yaml",
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return candidates[0]
+
+_DEFAULT_KB_PATH = _find_kb_path()
 
 
 def load_techniques(path: Path | None = None) -> list[Technique]:

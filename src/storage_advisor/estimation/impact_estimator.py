@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from storage_advisor.domain.recommendations import Recommendation
 from storage_advisor.domain.scenario import Scenario
+from storage_advisor.integrations.pricing import AWSPricingClient, RealCostEstimate
 
 
 # ---------------------------------------------------------------------------
@@ -237,6 +238,13 @@ def _estimate_latency_impact(
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
+_pricing_client = AWSPricingClient()
+
+
+def real_cost_estimate(scenario: Scenario, architecture) -> RealCostEstimate:
+    return _pricing_client.calculate_monthly_architecture_cost(architecture, scenario)
+
 
 def estimate_impact(
     scenario: Scenario,

@@ -13,6 +13,7 @@ from storage_advisor.architecture.builder import ArchitectureBuilder
 from storage_advisor.domain.scenario import Scenario
 from storage_advisor.estimation.impact_estimator import estimate_impact
 from storage_advisor.integrations.bedrock import BedrockExplainer
+from storage_advisor.integrations.pricing import AWSPricingClient
 from storage_advisor.knowledge.technique_catalog import load_techniques
 from storage_advisor.recommendation.recommendation_engine import run_recommendation_engine
 
@@ -37,6 +38,7 @@ def _load_engine():
         "builder": ArchitectureBuilder(),
         "whatif": WhatIfAnalyzer(),
         "bedrock": BedrockExplainer(),
+        "pricing": AWSPricingClient(),
         "store": store,
     }
 
@@ -134,10 +136,11 @@ for _k in [
 # Tabs
 # ---------------------------------------------------------------------------
 
-tab_arch, tab_rec, tab_impact, tab_why, tab_analytics, tab_whatif = st.tabs([
+tab_arch, tab_rec, tab_impact, tab_cost, tab_why, tab_analytics, tab_whatif = st.tabs([
     "\U0001f3d7️ Architect",
     "\U0001f4cb Recommendation",
     "\U0001f4ca Impact",
+    "\U0001f4b0 Real Cost",
     "❓ Why?",
     "\U0001f4c8 Analytics",
     "\U0001f504 What-if",
@@ -459,7 +462,75 @@ with tab_impact:
 
 
 # ===================================================================
-# TAB 4 — Why?
+# TAB 4 — Real Cost
+# ===================================================================
+with tab_cost:
+    if st.session_state.current_architecture is None:
+        st.info("Run analysis first (Architect tab).")
+    else:
+        import pandas as pd
+        from datetime import date as _date
+
+        st.subheader("AWS list price breakdown")
+        st.caption(
+            f"Region: us-east-1 — Based on AWS public pricing as of "
+            f"{_date.today().isoformat()}"
+        )
+
+        pricing_result = components["pricing"].calculate_monthly_architecture_cost(
+            st.session_state.current_architecture,
+            st.session_state.current_scenario,
+        )
+
+        st.metric(
+            "Estimated monthly AWS cost",
+            f"${pricing_result.total_monthly_usd:,.2f}",
+            help="Based on AWS list prices. See disclaimer below.",
+        )
+
+        df_cost = pd.DataFrame([{
+            "Service": item.service,
+            "Description": item.label,
+            "Monthly Cost": f"${item.monthly_cost_usd:,.2f}",
+        } for item in pricing_result.line_items])
+        st.dataframe(df_cost, use_container_width=True, hide_index=True)
+
+        fig_cost = px.bar(
+            x=[item.service for item in pricing_result.line_items],
+            y=[item.monthly_cost_usd for item in pricing_result.line_items],
+            labels={"x": "Service", "y": "Monthly Cost (USD)"},
+            title="Monthly cost by AWS service",
+            color=[item.monthly_cost_usd for item in pricing_result.line_items],
+            color_continuous_scale="Blues",
+        )
+        st.plotly_chart(fig_cost, use_container_width=True)
+
+        new_region = st.selectbox(
+            "Compare pricing in another region",
+            ["us-east-1", "us-west-2", "eu-west-1", "ap-south-1"],
+            index=0,
+        )
+        if new_region != "us-east-1":
+            alt_pricing = AWSPricingClient(region=new_region)
+            alt_result = alt_pricing.calculate_monthly_architecture_cost(
+                st.session_state.current_architecture,
+                st.session_state.current_scenario,
+            )
+            delta = alt_result.total_monthly_usd - pricing_result.total_monthly_usd
+            st.metric(
+                f"Cost in {new_region}",
+                f"${alt_result.total_monthly_usd:,.2f}",
+                delta=f"${delta:+,.2f} vs us-east-1",
+            )
+
+        st.caption(pricing_result.disclaimer)
+        st.caption(
+            "Source: AWS public pricing API · " + pricing_result.pricing_date
+        )
+
+
+# ===================================================================
+# TAB 5 — Why?
 # ===================================================================
 with tab_why:
     if st.session_state.current_result is None:
