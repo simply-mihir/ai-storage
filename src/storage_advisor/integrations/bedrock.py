@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ExplanationResult:
     text: str
-    source: str  # "bedrock" | "structured_fallback"
+    source: str  # "bedrock" | "groq" | "structured_fallback"
 
 
 _EXPLAIN_SYSTEM = (
@@ -79,6 +79,11 @@ def structured_fallback(
 
 
 class BedrockExplainer:
+    """AI explanation priority chain:
+    1. Amazon Bedrock Nova Lite (primary — AWS-native, preferred for judging)
+    2. Groq Qwen 3.8 27B (fallback — activates only if Bedrock unavailable)
+    3. Structured engine output (final fallback — always works, no external calls)
+    """
 
     def __init__(
         self,
@@ -106,38 +111,103 @@ class BedrockExplainer:
         except Exception as e:
             logger.warning("Bedrock unavailable: %s", e)
 
+        self.groq_available = False
+        self._groq_client = None
+        try:
+            from groq import Groq
+            api_key = os.environ.get("GROQ_API_KEY")
+            if api_key:
+                self._groq_client = Groq(api_key=api_key)
+                self.groq_available = True
+                logger.info("Groq client initialized successfully")
+        except Exception as e:
+            logger.warning("Groq not available: %s", e)
+
     def explain(
         self,
         result: RecommendationResult,
         scenario: Scenario,
         impact: ImpactReport | None = None,
     ) -> ExplanationResult:
-        if not self.available:
-            return structured_fallback(result, scenario)
+        # PRIMARY: Amazon Bedrock
+        if self.available:
+            try:
+                user_prompt = self._build_explain_prompt(result, scenario, impact)
+                response_text = self._invoke(
+                    system=_EXPLAIN_SYSTEM, user=user_prompt,
+                )
+                return ExplanationResult(text=response_text, source="bedrock")
+            except Exception as e:
+                logger.warning("Bedrock explain failed: %s", e)
 
-        try:
-            user_prompt = self._build_explain_prompt(result, scenario, impact)
-            response_text = self._invoke(
-                system=_EXPLAIN_SYSTEM, user=user_prompt,
-            )
-            return ExplanationResult(text=response_text, source="bedrock")
-        except Exception as e:
-            logger.error("Bedrock explain failed: %s", e)
-            return structured_fallback(result, scenario)
+        # FALLBACK 1: Groq (only if Bedrock unavailable or failed)
+        if self.groq_available:
+            try:
+                return self._explain_via_groq(result, scenario, impact)
+            except Exception as e:
+                logger.warning("Groq explain failed: %s", e)
+
+        # FALLBACK 2: Structured engine (guaranteed — no external dependency)
+        return structured_fallback(result, scenario)
 
     def extract_scenario_from_text(self, user_text: str) -> dict:
-        if not self.available:
-            return {}
+        if self.available:
+            try:
+                response_text = self._invoke(
+                    system=_EXTRACT_SYSTEM,
+                    user=f"Workload description: {user_text}",
+                )
+                return json.loads(response_text)
+            except Exception as e:
+                logger.warning("Bedrock extraction failed: %s", e)
 
-        try:
-            response_text = self._invoke(
-                system=_EXTRACT_SYSTEM,
-                user=f"Workload description: {user_text}",
-            )
-            return json.loads(response_text)
-        except Exception as e:
-            logger.error("Bedrock extraction failed: %s", e)
-            return {}
+        if self.groq_available:
+            try:
+                return self._extract_via_groq(user_text)
+            except Exception as e:
+                logger.warning("Groq extraction failed: %s", e)
+
+        return {}
+
+    def _explain_via_groq(
+        self,
+        result: RecommendationResult,
+        scenario: Scenario,
+        impact: ImpactReport | None = None,
+    ) -> ExplanationResult:
+        user_prompt = self._build_explain_prompt(result, scenario, impact)
+        response = self._groq_client.chat.completions.create(
+            model="qwen/qwen3.8-27b",
+            messages=[
+                {"role": "system", "content": _EXPLAIN_SYSTEM + " Do not include internal reasoning or thinking tags in your response."},
+                {"role": "user", "content": user_prompt},
+            ],
+            max_tokens=300,
+            temperature=0.3,
+        )
+        text = response.choices[0].message.content or ""
+        if "<think>" in text:
+            text = text.split("</think>")[-1].strip()
+        return ExplanationResult(
+            text=text,
+            source="groq",
+        )
+
+    def _extract_via_groq(self, user_text: str) -> dict:
+        response = self._groq_client.chat.completions.create(
+            model="qwen/qwen3.8-27b",
+            messages=[
+                {"role": "system", "content": _EXTRACT_SYSTEM + " Do not include internal reasoning or thinking tags. Return JSON only."},
+                {"role": "user", "content": f"Workload description: {user_text}"},
+            ],
+            max_tokens=300,
+            temperature=0.1,
+        )
+        text = (response.choices[0].message.content or "").strip()
+        if "<think>" in text:
+            text = text.split("</think>")[-1].strip()
+        text = text.replace("```json", "").replace("```", "").strip()
+        return json.loads(text)
 
     def _invoke(self, system: str, user: str) -> str:
         body = json.dumps({

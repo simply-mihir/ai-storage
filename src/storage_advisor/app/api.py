@@ -406,6 +406,7 @@ async def health():
             "kb_version": KB_VERSION,
             "kb_technique_count": len(_techniques),
             "bedrock_available": _explainer.available,
+            "groq_available": _explainer.groq_available,
             "uptime_seconds": round(uptime, 2),
         }
     except Exception:
