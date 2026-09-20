@@ -12,5 +12,6 @@ services:
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - DATABASE_URL=${DATABASE_URL}
       - BEDROCK_MODEL_ID=${BEDROCK_MODEL_ID:-amazon.nova-lite-v1:0}
+      - GROQ_API_KEY=${GROQ_API_KEY}
     volumes:
       - ./data:/app/data

@@ -9,9 +9,12 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
+from pathlib import Path
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, ValidationError
 
 from storage_advisor.analytics.whatif import WhatIfAnalyzer
@@ -362,6 +365,7 @@ async def trajectory(body: TrajectoryRequest):
                 "top_techniques": s.top_techniques,
                 "required_techniques": s.required_techniques,
                 "architecture_services": s.architecture_services,
+                "estimated_storage_gb": s.estimated_storage_gb,
                 "real_cost_usd": s.real_cost_usd,
                 "latency_ms": s.latency_ms,
             }
@@ -394,6 +398,18 @@ async def export_terraform(body: TerraformRequest):
         "component_count": export.component_count,
         "summary": export.summary,
     }
+
+
+_STATIC_DIR = Path(__file__).resolve().parents[3] / "static"
+
+
+@app.get("/", include_in_schema=False)
+async def serve_index():
+    return FileResponse(_STATIC_DIR / "index.html", media_type="text/html")
+
+
+if _STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
 
 @app.get("/health")

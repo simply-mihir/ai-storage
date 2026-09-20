@@ -37,7 +37,8 @@ Explainable AI-Powered Data Storage Architecture & Optimization Advisor. Given a
 ## Features
 
 - **Deterministic Architecture Recommendations** — rules engine evaluates 19 techniques against 14 problem types. No LLM in the decision loop.
-- **Full Explainability** — every recommendation traces requirement → problem → technique → effect → trade-off. Bedrock adds natural-language explanations when available; structured fallback always works.
+- **Full Explainability** — every recommendation traces requirement → problem → technique → effect → trade-off. Three-tier AI explanation chain: Bedrock (primary) → Groq (fallback) → structured engine (offline).
+- **Architecture Decision Documents** — one-click generation of a 6-section markdown document with context, key decisions, rejected alternatives, risks, 90-day implementation sequence, and open questions.
 - **Real AWS Cost Estimates** — live pricing from the AWS Pricing API (S3, RDS, ElastiCache, Glacier) with per-component line items and regional comparison.
 - **Growth Trajectory Simulator** — 24-month projection of architecture evolution with compound user growth, tipping point detection (priority escalations, new techniques, architecture changes), and monthly cost tracking.
 - **Terraform Scaffold Generator** — downloadable `.tf` files (main, variables, outputs) mapped from the recommended architecture. Includes multi-AZ, lifecycle rules, and a zip bundle with `terraform.tfvars.example`.
@@ -49,7 +50,8 @@ Explainable AI-Powered Data Storage Architecture & Optimization Advisor. Given a
 
 | Service | Purpose | Required? |
 |---------|---------|-----------|
-| **Amazon Bedrock** (Nova Lite) | Natural-language explanation of recommendations and free-text scenario parsing | No — falls back to structured explanations |
+| **Amazon Bedrock** (Nova Lite) | Natural-language explanation of recommendations and free-text scenario parsing (primary) | No — falls back to Groq, then structured engine |
+| **Groq** (Qwen 3.8 27B) | Fallback AI explanation and NL extraction when Bedrock is unavailable | No — falls back to structured engine |
 | **Amazon S3** | Persistent storage for scenario results and analytics Parquet files | No — local filesystem fallback |
 | **Amazon RDS** (PostgreSQL) | Metadata store for scenario runs, recommendation history, and domain statistics | No — SQLite fallback |
 | **AWS Pricing API** | Real-time list prices for S3, RDS, ElastiCache, Glacier cost estimates | No — cached defaults if unreachable |
@@ -94,7 +96,7 @@ Streamlit on `:8501`, API on `:8000`. No AWS credentials required for local-only
 pytest tests/ -v
 ```
 
-215 tests covering: Pydantic validation (38), workload profiling (20), problem detection (22), recommendation engine (16), impact estimation (10), architecture builder (7), analytics pipeline (16), API endpoints (8), Streamlit smoke tests (2), Bedrock integration (11), AWS stores (9), what-if analysis (5), ML experiment (4), growth trajectory (9), Terraform export (11), confidence bands (4), real-cost pricing (13).
+222 tests covering: Pydantic validation (38), workload profiling (20), problem detection (22), recommendation engine (16), impact estimation (10), architecture builder (7), analytics pipeline (16), API endpoints (8), Streamlit smoke tests (2), Bedrock integration (11), AWS stores (9), what-if analysis (5), ML experiment (4), growth trajectory (9), Terraform export (11), confidence bands (4), real-cost pricing (13), architecture story (7).
 
 ## Sample Output
 
@@ -177,6 +179,6 @@ All data in `data/synthetic/` is generated programmatically using probability di
 ## Tech Stack
 
 - Python 3.11+ / Pydantic v2 / FastAPI / Streamlit / Plotly
-- AWS Bedrock (Nova Lite) / S3 / RDS (PostgreSQL) / Pricing API / SQLAlchemy
+- AWS Bedrock (Nova Lite) / Groq (Qwen 3.8 27B) / S3 / RDS (PostgreSQL) / Pricing API / SQLAlchemy
 - DuckDB (analytics) / NumPy (confidence bands) / scikit-learn (ML experiment) / NetworkX (co-occurrence)
 - Jinja2 (Terraform templates) / Docker / docker-compose for deployment
