@@ -7,7 +7,6 @@ RUN pip install --no-cache-dir ".[prod]"
 
 COPY static/ static/
 COPY data/synthetic/ data/synthetic/
-COPY data/processed/ data/processed/
 COPY configs/ configs/
 
 EXPOSE 8001
