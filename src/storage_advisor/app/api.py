@@ -401,6 +401,8 @@ async def export_terraform(body: TerraformRequest):
 
 
 _STATIC_DIR = Path(__file__).resolve().parents[3] / "static"
+if not _STATIC_DIR.exists():
+    _STATIC_DIR = Path("/app/static")
 
 
 @app.get("/", include_in_schema=False)
