@@ -1,0 +1,36 @@
+schema_version: 2
+id: bloom_filters
+name: Bloom Filters
+category: performance
+summary: "Use probabilistic data structures to quickly test set membership and skip unnecessary disk reads."
+mechanism: "Hashes each key through k independent hash functions into a bit array; a lookup that finds all k bits set reports 'possibly present' (with a tunable false-positive rate), while any unset bit guarantees absence."
+solves:
+  - HIGH_READ_LATENCY
+synergies_with:
+  - indexing
+  - columnar_storage
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Workload is write-only with no read lookups"
+    reason: "Bloom filters optimize reads; maintaining them on a write-only path is pure overhead."
+applicable_when:
+  read_pressure: [HIGH]
+implementation_complexity: low
+impacts:
+  storage: 0
+  performance: 3
+  cost: 1
+  scalability: 2
+  security: 0
+benefits:
+  - "Eliminates disk reads for keys that do not exist"
+  - "Constant-time lookups regardless of dataset size"
+  - "Minimal memory footprint relative to the dataset"
+disadvantages:
+  - "False positives require a follow-up disk read to confirm"
+  - "Cannot delete individual keys without counting or cuckoo variants"
+  - "Bit array must be sized at creation; resizing requires rebuild"
+companies:
+  - name: Google
+    context: "Bigtable per-SSTable bloom filters (Bigtable paper)."
