@@ -1,0 +1,40 @@
+schema_version: 2
+id: compaction
+name: Compaction
+category: storage
+summary: "Merge and reorganize storage files to reclaim space, reduce read amplification, and improve query performance in LSM-tree and append-only storage engines."
+mechanism: "Background process reads multiple sorted-string-table (SSTable) files, merges overlapping key ranges, discards tombstones and obsolete versions, and writes consolidated files with updated indexes."
+solves:
+  - MODERATE_STORAGE_GROWTH
+  - HIGH_STORAGE_GROWTH
+  - HIGH_READ_LATENCY
+synergies_with:
+  - tiered_storage
+  - compression
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Storage engine uses B-tree or row-oriented layout with in-place updates"
+    reason: "Compaction is specific to LSM-tree and append-only engines; B-trees do not accumulate SSTables."
+applicable_when:
+  storage_growth: [MODERATE, HIGH, EXTREME]
+implementation_complexity: medium
+impacts:
+  storage: 3
+  performance: 2
+  cost: 2
+  scalability: 1
+  security: 0
+benefits:
+  - "Reclaims disk space from deleted and overwritten records"
+  - "Reduces read amplification by consolidating fragmented data"
+  - "Maintains predictable read latency over time"
+disadvantages:
+  - "Consumes I/O and CPU during compaction runs"
+  - "Can cause latency spikes if compaction falls behind write rate"
+  - "Tuning compaction strategy requires workload-specific knowledge"
+companies:
+  - name: Meta
+    context: "RocksDB LSM-tree compaction tuning (public talks/blog)."
+  - name: Apache Cassandra
+    context: "Leveled/size-tiered compaction at Netflix-scale fleets (public case studies)."
