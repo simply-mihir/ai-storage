@@ -1,0 +1,59 @@
+schema_version: 2
+id: file_format_optimization
+name: File Format Optimization
+category: storage
+summary: "Convert data into optimized columnar file formats to reduce storage footprint and accelerate analytical queries."
+mechanism: "Transforms row-oriented or unstructured data into columnar formats with encoding schemes (dictionary, run-length, bit-packing), embedded statistics, and predicate pushdown metadata."
+solves:
+  - HIGH_ANALYTICS_WORKLOAD
+  - MODERATE_STORAGE_GROWTH
+  - HIGH_STORAGE_GROWTH
+  - EXTREME_STORAGE_GROWTH
+synergies_with:
+  - columnar_storage
+  - compression
+  - data_aggregation
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Data requires frequent row-level updates or deletes"
+    reason: "Columnar formats are write-once; row mutations require full file rewrites."
+applicable_when:
+  analytics_pressure: [MEDIUM, HIGH]
+  storage_growth: [MODERATE, HIGH, EXTREME]
+implementation_complexity: low
+impacts:
+  storage: 4
+  performance: 3
+  cost: 3
+  scalability: 3
+  security: 0
+benefits:
+  - "5-10x compression improvement over CSV/JSON"
+  - "Column pruning eliminates I/O for unused fields"
+  - "Predicate pushdown skips irrelevant row groups"
+  - "Schema evolution support for backward-compatible changes"
+disadvantages:
+  - "No in-place updates — requires rewrite to modify data"
+  - "Tooling ecosystem must support the chosen format"
+  - "Small files suffer from metadata overhead"
+companies:
+  - name: Netflix
+    context: "Parquet conversion of warehouse tables for storage savings (TechBlog)."
+  - name: Uber
+    context: "Columnar Parquet for analytics pipelines (engineering blog)."
+variants:
+  - id: parquet
+    name: Apache Parquet
+    summary: "Store data in Parquet columnar format with row-group partitioning and rich encoding."
+    mechanism: "Writes data in row groups of configurable size, each column chunk encoded independently with dictionary, RLE, or delta encoding; footer metadata enables predicate pushdown."
+    impacts:
+      storage: 4
+      performance: 3
+  - id: orc
+    name: Apache ORC
+    summary: "Store data in ORC columnar format with built-in indexes and ACID support."
+    mechanism: "Organizes data in stripes with lightweight indexes, bloom filters, and min/max statistics per stripe; supports ACID transactions via Hive ACID or Delta-style protocols."
+    impacts:
+      storage: 4
+      performance: 3
