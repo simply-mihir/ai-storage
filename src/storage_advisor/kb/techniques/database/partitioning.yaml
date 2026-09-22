@@ -37,3 +37,61 @@ disadvantages:
   - "Requires careful partition key selection"
   - "Schema changes can be more complex"
 companies: []
+
+variants:
+  - id: range
+    name: Range Partitioning
+    summary: "Partition rows by contiguous ranges of a key column (dates, numeric IDs)."
+    mechanism: "Defines partition boundaries on an ordered key; rows whose key falls within a boundary are stored in that partition. Ideal for time-series and sequential-ID workloads."
+    impacts:
+      storage: 0
+      performance: 4
+      cost: 2
+      scalability: 4
+      security: 0
+    benefits:
+      - "Efficient range queries and time-window scans"
+      - "Easy partition pruning on ordered predicates"
+      - "Simple to drop or archive old partitions"
+    disadvantages:
+      - "Hot partition risk if writes cluster in the latest range"
+      - "Requires careful boundary selection"
+      - "Schema changes can be more complex"
+
+  - id: list
+    name: List Partitioning
+    summary: "Partition rows by explicit lists of discrete key values (regions, categories)."
+    mechanism: "Maps each partition to an explicit set of key values; rows are routed to the partition whose value list contains their key."
+    impacts:
+      storage: 0
+      performance: 4
+      cost: 2
+      scalability: 3
+      security: 0
+    benefits:
+      - "Natural fit for categorical dimensions (region, tenant)"
+      - "Easy to add new partitions for new categories"
+      - "Straightforward partition pruning on equality predicates"
+    disadvantages:
+      - "Uneven data distribution if categories vary in size"
+      - "Must update partition definitions when new categories appear"
+      - "Schema changes can be more complex"
+
+  - id: hash
+    name: Hash Partitioning
+    summary: "Partition rows by hashing the key to distribute data uniformly across partitions."
+    mechanism: "Applies a hash function to the partition key and assigns rows to partitions via modulo arithmetic, ensuring even distribution regardless of key distribution."
+    impacts:
+      storage: 0
+      performance: 3
+      cost: 2
+      scalability: 4
+      security: 0
+    benefits:
+      - "Even data distribution eliminates hot partitions"
+      - "Good for high-write workloads with unpredictable key patterns"
+      - "Improved write throughput via partition-level locking"
+    disadvantages:
+      - "Range queries must scan all partitions"
+      - "Adding or removing partitions requires rehashing"
+      - "Cross-partition queries can be slower"

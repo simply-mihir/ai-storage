@@ -37,3 +37,42 @@ disadvantages:
   - "Write throughput is limited by synchronous replication"
   - "Additional infrastructure cost"
 companies: []
+
+variants:
+  - id: synchronous
+    name: Synchronous Replication
+    summary: "Commit a write only after all replicas have acknowledged, guaranteeing zero data loss on failover."
+    mechanism: "The primary sends WAL entries to replicas and waits for durable acknowledgement from every replica before confirming the commit to the client."
+    impacts:
+      storage: -2
+      performance: 1
+      cost: -2
+      scalability: 3
+      security: 0
+    benefits:
+      - "Zero data loss (RPO = 0) on failover"
+      - "Strong consistency across replicas"
+      - "Data protection against node failure"
+    disadvantages:
+      - "Write latency increases with replica distance"
+      - "Throughput limited by the slowest replica"
+      - "Additional infrastructure cost"
+
+  - id: asynchronous
+    name: Asynchronous Replication
+    summary: "Replicate writes in the background after the primary commits, trading consistency for lower write latency."
+    mechanism: "The primary commits locally and streams WAL entries to replicas asynchronously; replicas apply changes with a configurable lag."
+    impacts:
+      storage: -2
+      performance: 4
+      cost: -2
+      scalability: 4
+      security: 0
+    benefits:
+      - "Minimal write-path latency overhead"
+      - "Read scaling via read replicas"
+      - "Geographic distribution for lower read latency"
+    disadvantages:
+      - "Replication lag can cause stale reads"
+      - "Data loss window equal to replication lag on failover"
+      - "Additional infrastructure cost"

@@ -39,3 +39,43 @@ disadvantages:
   - "Retrieval from cold tiers may have higher latency"
   - "Migration policies need monitoring and tuning"
 companies: []
+
+variants:
+  - id: hot_cold_separation
+    name: Hot-Cold Separation
+    summary: "Partition data into hot (SSD/memory) and cold (HDD/object store) tiers based on access recency."
+    mechanism: "Tags data with last-access timestamps and migrates objects that exceed an age threshold from the hot tier to a cheaper cold tier on a scheduled basis."
+    impacts:
+      storage: 3
+      performance: 2
+      cost: 4
+      scalability: 3
+      security: 0
+    benefits:
+      - "Significant cost reduction by moving cold data to cheaper storage"
+      - "Maintains fast access for frequently used data"
+      - "Simple two-tier model is easy to reason about"
+    disadvantages:
+      - "Requires data lifecycle classification logic"
+      - "Retrieval from cold tier may have higher latency"
+      - "Migration policies need monitoring and tuning"
+
+  - id: intelligent_tiering
+    name: Intelligent Tiering
+    summary: "Automatically move data between multiple tiers using ML-driven or heuristic access-pattern analysis."
+    mechanism: "Monitors per-object access frequency and recency, builds a scoring model, and continuously migrates objects up or down across three or more tiers (hot, warm, cold, archive) without manual policy authoring."
+    implementation_complexity: high
+    impacts:
+      storage: 4
+      performance: 3
+      cost: 5
+      scalability: 3
+      security: 0
+    benefits:
+      - "Optimises cost without manual policy tuning"
+      - "Adapts to changing access patterns automatically"
+      - "Supports more than two tiers for finer-grained cost control"
+    disadvantages:
+      - "Higher implementation complexity than static tiering"
+      - "Model retraining or heuristic tuning adds operational burden"
+      - "Transition latency when data is promoted back to hot tier"

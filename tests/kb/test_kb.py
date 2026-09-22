@@ -442,13 +442,16 @@ class TestDiscoverFamilies:
         ids = {t.id for t in techs}
         assert "compression.lossless" in ids
         assert "caching.read_cache" in ids
-        assert "deduplication" in ids
-        assert "partitioning" in ids
+        assert "deduplication.inline" in ids
+        assert "partitioning.range" in ids
         assert "backup_strategies.snapshots" in ids
         assert "multi_region.active_active" in ids
         assert "encryption.at_rest" in ids
         assert "bloom_filters" in ids
-        assert len(techs) == 35
+        assert "replication.synchronous" in ids
+        assert "tiered_storage.hot_cold_separation" in ids
+        assert "indexing.composite" in ids
+        assert len(techs) == 42
 
 
 # ---------------------------------------------------------------------------
@@ -692,7 +695,9 @@ class TestDeterminism:
             # architecture/
             "multi_region.active_passive", "multi_region.active_active",
             # database/
-            "indexing", "partitioning", "replication",
+            "indexing.composite", "indexing.covering",
+            "partitioning.range", "partitioning.list", "partitioning.hash",
+            "replication.synchronous", "replication.asynchronous",
             "schema_optimization", "sharding",
             # performance/
             "bloom_filters",
@@ -708,11 +713,14 @@ class TestDeterminism:
             "archiving", "chunking", "compaction",
             "compression.lossless", "compression.lossy",
             "compression.adaptive", "compression.delta",
-            "deduplication",
+            "deduplication.inline", "deduplication.post_process",
+            "deduplication.content_defined_chunking",
             "file_format_optimization.parquet",
             "file_format_optimization.orc",
             "lifecycle_management",
-            "object_storage", "tiered_storage",
+            "object_storage",
+            "tiered_storage.hot_cold_separation",
+            "tiered_storage.intelligent_tiering",
         ]
         assert ids == expected
 

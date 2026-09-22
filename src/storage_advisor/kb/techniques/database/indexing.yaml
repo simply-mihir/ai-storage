@@ -35,3 +35,41 @@ disadvantages:
   - "Additional storage for index structures"
   - "Over-indexing degrades write performance"
 companies: []
+
+variants:
+  - id: composite
+    name: Composite Index
+    summary: "Index on multiple columns to accelerate queries that filter or sort on several fields simultaneously."
+    mechanism: "Builds a single B-tree (or equivalent) over a concatenated key of two or more columns; the leftmost-prefix rule determines which query patterns benefit."
+    impacts:
+      storage: -1
+      performance: 4
+      cost: 0
+      scalability: 3
+      security: 0
+    benefits:
+      - "Accelerates multi-column WHERE and ORDER BY clauses"
+      - "Avoids the need for multiple single-column indexes"
+      - "Supports efficient sorting and filtering"
+    disadvantages:
+      - "Larger index footprint than single-column indexes"
+      - "Column order in the index matters — wrong order yields no benefit"
+      - "Increases write latency (index maintenance on every write)"
+
+  - id: covering
+    name: Covering Index
+    summary: "Include all columns needed by a query in the index so the database never reads the base table."
+    mechanism: "Adds non-key columns to the index leaf pages (INCLUDE clause in PostgreSQL / covering index in MySQL) so the query planner satisfies the query from the index alone."
+    impacts:
+      storage: -2
+      performance: 5
+      cost: 0
+      scalability: 3
+      security: 0
+    benefits:
+      - "Eliminates table lookups for covered queries (index-only scan)"
+      - "Dramatic latency reduction for read-heavy query patterns"
+    disadvantages:
+      - "Significantly larger index storage than a normal index"
+      - "Write amplification — every included column update touches the index"
+      - "Over-indexing degrades write performance"

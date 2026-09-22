@@ -38,3 +38,60 @@ disadvantages:
   - "Memory-intensive dedup index"
   - "Risk of hash collision (extremely rare but not zero)"
 companies: []
+
+variants:
+  - id: inline
+    name: Inline Deduplication
+    summary: "Deduplicates data in real time as it is written, before it hits persistent storage."
+    mechanism: "Computes content hashes on the write path and checks the dedup index before committing a block; duplicate blocks are replaced with a reference to the canonical copy."
+    impacts:
+      storage: 4
+      performance: -1
+      cost: 3
+      scalability: 2
+      security: 0
+    benefits:
+      - "Immediate storage savings — no post-write overhead"
+      - "Reduces backup storage requirements"
+    disadvantages:
+      - "Adds latency to every write operation"
+      - "Memory-intensive dedup index"
+      - "Risk of hash collision (extremely rare but not zero)"
+
+  - id: post_process
+    name: Post-Process Deduplication
+    summary: "Deduplicates data in a background job after it has been written to storage."
+    mechanism: "A scheduled job scans recently written blocks, computes hashes, identifies duplicates, and replaces them with references to canonical copies."
+    impacts:
+      storage: 4
+      performance: 1
+      cost: 3
+      scalability: 2
+      security: 0
+    benefits:
+      - "No write-path latency penalty"
+      - "Reduces backup storage requirements"
+      - "Can be scheduled during off-peak hours"
+    disadvantages:
+      - "Storage savings are delayed until the background job runs"
+      - "Temporary excess storage consumption before dedup pass"
+      - "Memory-intensive dedup index"
+
+  - id: content_defined_chunking
+    name: Content-Defined Chunking
+    summary: "Splits data into variable-length chunks using content-based boundaries for finer-grained deduplication."
+    mechanism: "Uses a rolling hash (e.g. Rabin fingerprint) to detect chunk boundaries based on data content rather than fixed offsets, producing variable-length blocks that remain stable across insertions and deletions."
+    implementation_complexity: high
+    impacts:
+      storage: 5
+      performance: -1
+      cost: 4
+      scalability: 2
+      security: 0
+    benefits:
+      - "Higher dedup ratio than fixed-size blocking on modified files"
+      - "Stable chunk boundaries survive byte-level edits"
+    disadvantages:
+      - "More complex implementation than fixed-size chunking"
+      - "Variable chunk sizes complicate storage layout"
+      - "Higher CPU cost for rolling hash computation"
