@@ -1,0 +1,55 @@
+schema_version: 2
+id: encryption
+name: Encryption
+category: security
+summary: "Protect data confidentiality by encrypting it at rest and in transit using industry-standard algorithms."
+mechanism: "Applies symmetric (AES-256) or asymmetric (RSA, ECDSA) cryptographic algorithms with key management to render data unreadable without the correct decryption key."
+solves:
+  - COMPLIANCE_REQUIREMENT
+synergies_with:
+  - replication
+  - archiving
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Data is entirely non-sensitive and publicly available"
+    reason: "Encryption adds CPU and key-management overhead with no confidentiality benefit for public data."
+applicable_when:
+  compliance_pressure: [PRESENT]
+implementation_complexity: medium
+impacts:
+  storage: 0
+  performance: -1
+  cost: -1
+  scalability: 0
+  security: 4
+benefits:
+  - "Meets regulatory requirements for data protection (GDPR, HIPAA, PCI-DSS)"
+  - "Protects against data breaches from stolen disks or network interception"
+  - "Enables safe storage of sensitive data in multi-tenant environments"
+disadvantages:
+  - "CPU overhead for encryption and decryption operations"
+  - "Key management complexity (rotation, escrow, access control)"
+  - "Lost keys mean permanently inaccessible data"
+companies:
+  - name: Google
+    context: "Default at-rest envelope encryption across services (public whitepaper)."
+  - name: AWS
+    context: "S3 server-side encryption enabled by default."
+variants:
+  - id: at_rest
+    name: Encryption at Rest
+    summary: "Encrypt data stored on disk or in object stores so it is unreadable without the decryption key."
+    mechanism: "Transparent data encryption (TDE) or filesystem-level encryption applies AES-256 to data blocks as they are written; decryption occurs on read with keys from a KMS."
+    implementation_complexity: low
+    impacts:
+      performance: 0
+      cost: -1
+  - id: in_transit
+    name: Encryption in Transit
+    summary: "Encrypt data moving between services, clients, and storage to prevent eavesdropping."
+    mechanism: "TLS 1.3 or mTLS terminates at service endpoints; certificates are rotated automatically via ACME or internal PKI."
+    implementation_complexity: low
+    impacts:
+      performance: -1
+      cost: 0
