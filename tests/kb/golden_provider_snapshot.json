@@ -1,0 +1,773 @@
+[
+  {
+    "applicable_when": {
+      "retention_class": [
+        "LONG_TERM"
+      ]
+    },
+    "benefits": [
+      "Lowest cost per GB for long-term data preservation",
+      "Satisfies regulatory retention requirements"
+    ],
+    "category": "STORAGE",
+    "conflicts_with": [],
+    "cost_impact": "HIGH_IMPROVEMENT",
+    "description": "Move historical or rarely accessed data to low-cost archival storage.",
+    "disadvantages": [
+      "High retrieval latency (minutes to hours)",
+      "Retrieval costs can be significant",
+      "Data must be identified and classified before archiving"
+    ],
+    "id": "archiving",
+    "implementation_complexity": "MEDIUM",
+    "name": "Archiving",
+    "not_recommended_when": [
+      "All data needs to be accessible with low latency",
+      "Retention period is less than 1 year"
+    ],
+    "performance_impact": "NEUTRAL",
+    "prerequisites": [],
+    "scalability_impact": "MODERATE_IMPROVEMENT",
+    "solves": [
+      "LONG_TERM_RETENTION",
+      "HOT_COLD_DATA_MIX",
+      "MODERATE_STORAGE_GROWTH",
+      "HIGH_STORAGE_GROWTH",
+      "EXTREME_STORAGE_GROWTH"
+    ],
+    "storage_impact": "HIGH_IMPROVEMENT"
+  },
+  {
+    "applicable_when": {
+      "latency_class": [
+        "LOW_LATENCY",
+        "ULTRA_LOW_LATENCY"
+      ],
+      "read_pressure": [
+        "HIGH"
+      ]
+    },
+    "benefits": [
+      "10-100x latency reduction for cached data",
+      "Dramatically reduces database read load",
+      "Handles traffic spikes via cache absorption"
+    ],
+    "category": "PERFORMANCE",
+    "conflicts_with": [],
+    "cost_impact": "MODERATE_INCREASE",
+    "description": "Store frequently accessed data in a fast in-memory cache to reduce database load and response latency.",
+    "disadvantages": [
+      "Cache invalidation complexity",
+      "Memory cost for cache infrastructure",
+      "Stale data risk without proper TTL strategy"
+    ],
+    "id": "caching",
+    "implementation_complexity": "MEDIUM",
+    "name": "Caching",
+    "not_recommended_when": [
+      "Data changes on every read (no repeat reads)",
+      "Write-dominant workload with negligible read traffic",
+      "Dataset is small enough to fit in database memory"
+    ],
+    "performance_impact": "HIGH_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "HIGH_IMPROVEMENT",
+    "solves": [
+      "HIGH_READ_LATENCY",
+      "SCALABILITY_PRESSURE"
+    ],
+    "storage_impact": "NEUTRAL"
+  },
+  {
+    "applicable_when": {
+      "object_storage_pressure": [
+        "HIGH"
+      ],
+      "storage_growth": [
+        "MODERATE",
+        "HIGH",
+        "EXTREME"
+      ]
+    },
+    "benefits": [
+      "Enables deduplication at chunk level",
+      "Improves upload/download parallelism",
+      "Supports resumable transfers"
+    ],
+    "category": "STORAGE",
+    "conflicts_with": [],
+    "cost_impact": "SLIGHT_IMPROVEMENT",
+    "description": "Split large files into smaller fixed-size or content-defined chunks for efficient storage and transfer.",
+    "disadvantages": [
+      "Adds metadata overhead for chunk tracking",
+      "Reassembly complexity for reads"
+    ],
+    "id": "chunking",
+    "implementation_complexity": "HIGH",
+    "name": "Chunking",
+    "not_recommended_when": [
+      "Files are small (under 10 MB)",
+      "Simple object storage handles the workload adequately"
+    ],
+    "performance_impact": "MODERATE_IMPROVEMENT",
+    "prerequisites": [
+      "object_storage"
+    ],
+    "scalability_impact": "MODERATE_IMPROVEMENT",
+    "solves": [
+      "LARGE_UNSTRUCTURED_OBJECT_WORKLOAD",
+      "MODERATE_STORAGE_GROWTH",
+      "HIGH_STORAGE_GROWTH",
+      "EXTREME_STORAGE_GROWTH"
+    ],
+    "storage_impact": "MODERATE_IMPROVEMENT"
+  },
+  {
+    "applicable_when": {
+      "analytics_pressure": [
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "benefits": [
+      "10-100x faster analytical queries vs row-oriented storage",
+      "Excellent compression for columnar data",
+      "Reduces I/O by reading only needed columns"
+    ],
+    "category": "ANALYTICS",
+    "conflicts_with": [],
+    "cost_impact": "MODERATE_IMPROVEMENT",
+    "description": "Store data in column-oriented format for efficient analytical queries that scan specific columns.",
+    "disadvantages": [
+      "Poor performance for single-row lookups",
+      "Write amplification for row-level updates",
+      "Not suitable for OLTP workloads"
+    ],
+    "id": "columnar_storage",
+    "implementation_complexity": "MEDIUM",
+    "name": "Columnar Storage",
+    "not_recommended_when": [
+      "Workload is purely transactional with no analytics",
+      "Queries always fetch full rows"
+    ],
+    "performance_impact": "HIGH_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "HIGH_IMPROVEMENT",
+    "solves": [
+      "HIGH_ANALYTICS_WORKLOAD",
+      "HIGH_READ_LATENCY"
+    ],
+    "storage_impact": "MODERATE_IMPROVEMENT"
+  },
+  {
+    "applicable_when": {
+      "storage_growth": [
+        "MEDIUM",
+        "MODERATE",
+        "HIGH",
+        "EXTREME"
+      ]
+    },
+    "benefits": [
+      "Reduces storage footprint by 30-70% depending on data type",
+      "Reduces network transfer costs",
+      "Improves I/O throughput for sequential reads"
+    ],
+    "category": "STORAGE",
+    "conflicts_with": [],
+    "cost_impact": "HIGH_IMPROVEMENT",
+    "description": "Reduce data size using lossless or lossy algorithms to lower storage costs and improve I/O throughput.",
+    "disadvantages": [
+      "CPU overhead for compression/decompression",
+      "May increase latency for random access patterns",
+      "Compression ratio varies significantly by data type"
+    ],
+    "id": "compression",
+    "implementation_complexity": "LOW",
+    "name": "Compression",
+    "not_recommended_when": [
+      "Data is already compressed (images, videos in compressed formats)",
+      "Ultra-low latency random reads are required and CPU budget is tight"
+    ],
+    "performance_impact": "SLIGHT_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "MODERATE_IMPROVEMENT",
+    "solves": [
+      "MODERATE_STORAGE_GROWTH",
+      "HIGH_STORAGE_GROWTH",
+      "EXTREME_STORAGE_GROWTH",
+      "HOT_COLD_DATA_MIX"
+    ],
+    "storage_impact": "HIGH_IMPROVEMENT"
+  },
+  {
+    "applicable_when": {
+      "analytics_pressure": [
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "benefits": [
+      "Orders-of-magnitude faster dashboard queries",
+      "Reduces compute cost for repeated reports"
+    ],
+    "category": "ANALYTICS",
+    "conflicts_with": [],
+    "cost_impact": "MODERATE_IMPROVEMENT",
+    "description": "Pre-aggregate raw data into summary tables for faster reporting and dashboards.",
+    "disadvantages": [
+      "Loss of granularity in aggregated data",
+      "Aggregation pipeline needs maintenance",
+      "Cannot answer ad-hoc queries on raw data"
+    ],
+    "id": "data_aggregation",
+    "implementation_complexity": "MEDIUM",
+    "name": "Data Aggregation",
+    "not_recommended_when": [
+      "Users need access to raw granular data",
+      "Query patterns are unpredictable"
+    ],
+    "performance_impact": "HIGH_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "MODERATE_IMPROVEMENT",
+    "solves": [
+      "HIGH_ANALYTICS_WORKLOAD",
+      "HIGH_READ_LATENCY"
+    ],
+    "storage_impact": "SLIGHT_IMPROVEMENT"
+  },
+  {
+    "applicable_when": {
+      "retention_class": [
+        "MEDIUM_TERM",
+        "LONG_TERM"
+      ],
+      "storage_growth": [
+        "MEDIUM",
+        "MODERATE",
+        "HIGH",
+        "EXTREME"
+      ]
+    },
+    "benefits": [
+      "Reduces storage costs directly",
+      "Improves query performance on smaller datasets",
+      "Simplifies backup and restore"
+    ],
+    "category": "PERFORMANCE",
+    "conflicts_with": [],
+    "cost_impact": "HIGH_IMPROVEMENT",
+    "description": "Remove or archive obsolete, expired, or irrelevant data to reduce dataset size.",
+    "disadvantages": [
+      "Risk of premature data deletion",
+      "Requires clear retention and pruning policies"
+    ],
+    "id": "data_pruning",
+    "implementation_complexity": "LOW",
+    "name": "Data Pruning",
+    "not_recommended_when": [
+      "Regulatory requirements forbid deletion",
+      "All data has ongoing business value"
+    ],
+    "performance_impact": "MODERATE_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "MODERATE_IMPROVEMENT",
+    "solves": [
+      "MODERATE_STORAGE_GROWTH",
+      "HIGH_STORAGE_GROWTH",
+      "EXTREME_STORAGE_GROWTH",
+      "HOT_COLD_DATA_MIX",
+      "LARGE_TRANSACTIONAL_DATASET"
+    ],
+    "storage_impact": "HIGH_IMPROVEMENT"
+  },
+  {
+    "applicable_when": {
+      "storage_growth": [
+        "MEDIUM",
+        "MODERATE",
+        "HIGH",
+        "EXTREME"
+      ]
+    },
+    "benefits": [
+      "Significant storage reduction when duplicate data is common",
+      "Reduces backup storage requirements"
+    ],
+    "category": "STORAGE",
+    "conflicts_with": [],
+    "cost_impact": "MODERATE_IMPROVEMENT",
+    "description": "Eliminate redundant copies of data to reduce storage consumption.",
+    "disadvantages": [
+      "Computational overhead for hash comparison",
+      "Memory-intensive dedup index",
+      "Risk of hash collision (extremely rare but not zero)"
+    ],
+    "id": "deduplication",
+    "implementation_complexity": "HIGH",
+    "name": "Deduplication",
+    "not_recommended_when": [
+      "Data has very low redundancy (unique sensor readings, time-series)",
+      "Startup team lacks operational capacity for dedup infrastructure",
+      "Budget does not support the additional compute"
+    ],
+    "performance_impact": "NEUTRAL",
+    "prerequisites": [],
+    "scalability_impact": "SLIGHT_IMPROVEMENT",
+    "solves": [
+      "MODERATE_STORAGE_GROWTH",
+      "HIGH_STORAGE_GROWTH",
+      "EXTREME_STORAGE_GROWTH",
+      "HOT_COLD_DATA_MIX"
+    ],
+    "storage_impact": "HIGH_IMPROVEMENT"
+  },
+  {
+    "applicable_when": {
+      "read_pressure": [
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "benefits": [
+      "Orders-of-magnitude faster lookups on indexed columns",
+      "Supports efficient sorting and filtering"
+    ],
+    "category": "DATABASE",
+    "conflicts_with": [],
+    "cost_impact": "NEUTRAL",
+    "description": "Create database indexes to accelerate read queries on frequently accessed columns.",
+    "disadvantages": [
+      "Increases write latency (index maintenance on every write)",
+      "Additional storage for index structures",
+      "Over-indexing degrades write performance"
+    ],
+    "id": "indexing",
+    "implementation_complexity": "LOW",
+    "name": "Indexing",
+    "not_recommended_when": [
+      "Write-heavy workload where every millisecond of write latency matters",
+      "Queries are analytical scans rather than point lookups"
+    ],
+    "performance_impact": "HIGH_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "MODERATE_IMPROVEMENT",
+    "solves": [
+      "HIGH_READ_LATENCY",
+      "LARGE_TRANSACTIONAL_DATASET"
+    ],
+    "storage_impact": "SLIGHT_INCREASE"
+  },
+  {
+    "applicable_when": {
+      "retention_class": [
+        "MEDIUM_TERM",
+        "LONG_TERM"
+      ],
+      "storage_growth": [
+        "MEDIUM",
+        "MODERATE",
+        "HIGH",
+        "EXTREME"
+      ]
+    },
+    "benefits": [
+      "Automated cost optimization without manual intervention",
+      "Ensures compliance with retention policies",
+      "Reduces operational burden of data management"
+    ],
+    "category": "STORAGE",
+    "conflicts_with": [],
+    "cost_impact": "HIGH_IMPROVEMENT",
+    "description": "Automate data transitions between storage tiers and eventual deletion based on age or access patterns.",
+    "disadvantages": [
+      "Requires clear lifecycle rules and policies",
+      "Misconfigured policies can delete data prematurely"
+    ],
+    "id": "lifecycle_management",
+    "implementation_complexity": "MEDIUM",
+    "name": "Lifecycle Management",
+    "not_recommended_when": [
+      "No clear data aging pattern exists",
+      "All data must be retained at the same tier indefinitely"
+    ],
+    "performance_impact": "NEUTRAL",
+    "prerequisites": [
+      "tiered_storage"
+    ],
+    "scalability_impact": "MODERATE_IMPROVEMENT",
+    "solves": [
+      "HOT_COLD_DATA_MIX",
+      "MODERATE_STORAGE_GROWTH",
+      "HIGH_STORAGE_GROWTH",
+      "EXTREME_STORAGE_GROWTH",
+      "LONG_TERM_RETENTION"
+    ],
+    "storage_impact": "MODERATE_IMPROVEMENT"
+  },
+  {
+    "applicable_when": {
+      "analytics_pressure": [
+        "MEDIUM",
+        "HIGH"
+      ],
+      "read_pressure": [
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "benefits": [
+      "Eliminates repeated expensive computation",
+      "Provides near-instant response for pre-computed queries"
+    ],
+    "category": "PERFORMANCE",
+    "conflicts_with": [],
+    "cost_impact": "SLIGHT_INCREASE",
+    "description": "Pre-compute and store query results for expensive aggregations or joins.",
+    "disadvantages": [
+      "Storage overhead for materialized data",
+      "Refresh strategy needed (stale vs fresh trade-off)",
+      "Not suitable for highly dynamic data"
+    ],
+    "id": "materialized_views",
+    "implementation_complexity": "MEDIUM",
+    "name": "Materialized Views",
+    "not_recommended_when": [
+      "Underlying data changes every second and views must be fresh",
+      "Query patterns are unpredictable (ad-hoc exploration)"
+    ],
+    "performance_impact": "HIGH_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "MODERATE_IMPROVEMENT",
+    "solves": [
+      "HIGH_READ_LATENCY",
+      "HIGH_ANALYTICS_WORKLOAD"
+    ],
+    "storage_impact": "SLIGHT_INCREASE"
+  },
+  {
+    "applicable_when": {
+      "object_storage_pressure": [
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "benefits": [
+      "Near-infinite horizontal scalability",
+      "Low cost per GB compared to block or database storage",
+      "Built-in redundancy and durability",
+      "Native lifecycle management support"
+    ],
+    "category": "STORAGE",
+    "conflicts_with": [],
+    "cost_impact": "HIGH_IMPROVEMENT",
+    "description": "Store unstructured data (images, videos, documents) in a scalable object store rather than a relational database.",
+    "disadvantages": [
+      "Higher latency than local/block storage for small objects",
+      "Eventual consistency in some implementations",
+      "Not suitable for transactional or relational queries"
+    ],
+    "id": "object_storage",
+    "implementation_complexity": "LOW",
+    "name": "Object Storage",
+    "not_recommended_when": [
+      "All data is purely structured/transactional with no binary objects"
+    ],
+    "performance_impact": "SLIGHT_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "HIGH_IMPROVEMENT",
+    "solves": [
+      "LARGE_UNSTRUCTURED_OBJECT_WORKLOAD",
+      "MODERATE_STORAGE_GROWTH",
+      "HIGH_STORAGE_GROWTH",
+      "EXTREME_STORAGE_GROWTH",
+      "SCALABILITY_PRESSURE"
+    ],
+    "storage_impact": "HIGH_IMPROVEMENT"
+  },
+  {
+    "applicable_when": {
+      "analytics_pressure": [
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "benefits": [
+      "Excellent compression (often 5-10x vs CSV/JSON)",
+      "Column pruning for efficient analytical queries",
+      "Schema evolution support",
+      "Broad ecosystem support (Spark, DuckDB, Pandas, Athena)"
+    ],
+    "category": "ANALYTICS",
+    "conflicts_with": [],
+    "cost_impact": "MODERATE_IMPROVEMENT",
+    "description": "Use Apache Parquet columnar file format for efficient analytical data storage and processing.",
+    "disadvantages": [
+      "Not suitable for low-latency point queries",
+      "Write-once, read-many pattern (no in-place updates)",
+      "Requires tooling that supports the format"
+    ],
+    "id": "parquet_format",
+    "implementation_complexity": "LOW",
+    "name": "Parquet Format",
+    "not_recommended_when": [
+      "Data requires frequent row-level updates",
+      "No analytical workload exists"
+    ],
+    "performance_impact": "MODERATE_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "HIGH_IMPROVEMENT",
+    "solves": [
+      "HIGH_ANALYTICS_WORKLOAD",
+      "MODERATE_STORAGE_GROWTH",
+      "HIGH_STORAGE_GROWTH",
+      "EXTREME_STORAGE_GROWTH"
+    ],
+    "storage_impact": "HIGH_IMPROVEMENT"
+  },
+  {
+    "applicable_when": {
+      "write_pressure": [
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "benefits": [
+      "Dramatically faster queries that match the partition key",
+      "Easier maintenance (drop/archive individual partitions)",
+      "Improved write throughput via partition-level locking"
+    ],
+    "category": "DATABASE",
+    "conflicts_with": [],
+    "cost_impact": "SLIGHT_IMPROVEMENT",
+    "description": "Divide large tables into smaller partitions based on a key (date, region, ID range) to improve query performance and manageability.",
+    "disadvantages": [
+      "Cross-partition queries can be slower",
+      "Requires careful partition key selection",
+      "Schema changes can be more complex"
+    ],
+    "id": "partitioning",
+    "implementation_complexity": "MEDIUM",
+    "name": "Partitioning",
+    "not_recommended_when": [
+      "Dataset is small (under 10 GB)",
+      "Queries rarely filter on the partition key"
+    ],
+    "performance_impact": "HIGH_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "HIGH_IMPROVEMENT",
+    "solves": [
+      "LARGE_TRANSACTIONAL_DATASET",
+      "HIGH_WRITE_PRESSURE",
+      "HIGH_READ_LATENCY"
+    ],
+    "storage_impact": "NEUTRAL"
+  },
+  {
+    "applicable_when": {
+      "read_pressure": [
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "benefits": [
+      "Often the highest-ROI performance improvement",
+      "No additional infrastructure cost",
+      "Reduces compute and I/O waste"
+    ],
+    "category": "PERFORMANCE",
+    "conflicts_with": [],
+    "cost_impact": "SLIGHT_IMPROVEMENT",
+    "description": "Analyze and rewrite slow queries, optimize execution plans, and eliminate unnecessary operations.",
+    "disadvantages": [
+      "Requires query profiling expertise",
+      "Benefits are workload-specific and not always predictable"
+    ],
+    "id": "query_optimization",
+    "implementation_complexity": "MEDIUM",
+    "name": "Query Optimization",
+    "not_recommended_when": [
+      "Queries are already optimized",
+      "Performance bottleneck is not in the database layer"
+    ],
+    "performance_impact": "HIGH_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "SLIGHT_IMPROVEMENT",
+    "solves": [
+      "HIGH_READ_LATENCY",
+      "LARGE_TRANSACTIONAL_DATASET"
+    ],
+    "storage_impact": "NEUTRAL"
+  },
+  {
+    "applicable_when": {
+      "availability_class": [
+        "HIGH",
+        "VERY_HIGH",
+        "MISSION_CRITICAL"
+      ]
+    },
+    "benefits": [
+      "Automatic failover for high availability",
+      "Read scaling via read replicas",
+      "Geographic distribution for lower latency",
+      "Data protection against node failure"
+    ],
+    "category": "DATABASE",
+    "conflicts_with": [],
+    "cost_impact": "MODERATE_INCREASE",
+    "description": "Maintain copies of data across multiple nodes or regions for availability and read scaling.",
+    "disadvantages": [
+      "Replication lag can cause stale reads",
+      "Write throughput is limited by synchronous replication",
+      "Additional infrastructure cost"
+    ],
+    "id": "replication",
+    "implementation_complexity": "MEDIUM",
+    "name": "Replication",
+    "not_recommended_when": [
+      "Single-node availability is acceptable",
+      "Budget cannot support multiple database instances"
+    ],
+    "performance_impact": "MODERATE_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "HIGH_IMPROVEMENT",
+    "solves": [
+      "HIGH_AVAILABILITY_REQUIREMENT",
+      "DISASTER_RECOVERY_REQUIREMENT",
+      "HIGH_READ_LATENCY",
+      "SCALABILITY_PRESSURE"
+    ],
+    "storage_impact": "MODERATE_INCREASE"
+  },
+  {
+    "applicable_when": {
+      "read_pressure": [
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "benefits": [
+      "Reduces unnecessary joins",
+      "Improves query planning efficiency",
+      "Can eliminate redundant data"
+    ],
+    "category": "DATABASE",
+    "conflicts_with": [],
+    "cost_impact": "NEUTRAL",
+    "description": "Redesign database schema for query efficiency: normalize or denormalize based on workload patterns.",
+    "disadvantages": [
+      "Denormalization introduces update anomalies",
+      "Requires deep understanding of query patterns"
+    ],
+    "id": "schema_optimization",
+    "implementation_complexity": "MEDIUM",
+    "name": "Schema Optimization",
+    "not_recommended_when": [
+      "Schema is simple and queries already perform well",
+      "Workload is purely write-heavy with minimal reads"
+    ],
+    "performance_impact": "MODERATE_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "SLIGHT_IMPROVEMENT",
+    "solves": [
+      "LARGE_TRANSACTIONAL_DATASET",
+      "HIGH_READ_LATENCY"
+    ],
+    "storage_impact": "SLIGHT_IMPROVEMENT"
+  },
+  {
+    "applicable_when": {
+      "scalability_pressure": [
+        "HIGH"
+      ],
+      "storage_growth": [
+        "HIGH",
+        "EXTREME"
+      ],
+      "write_pressure": [
+        "HIGH"
+      ]
+    },
+    "benefits": [
+      "Near-linear write throughput scaling",
+      "Each shard handles a fraction of total load"
+    ],
+    "category": "DATABASE",
+    "conflicts_with": [],
+    "cost_impact": "MODERATE_INCREASE",
+    "description": "Distribute data across multiple database instances based on a shard key for horizontal scaling.",
+    "disadvantages": [
+      "Significant operational complexity",
+      "Cross-shard queries are expensive or impossible",
+      "Rebalancing shards is disruptive",
+      "Application-level routing required"
+    ],
+    "id": "sharding",
+    "implementation_complexity": "HIGH",
+    "name": "Sharding",
+    "not_recommended_when": [
+      "Single database can handle the load",
+      "Team lacks experience with distributed databases",
+      "Cross-shard joins are frequently needed"
+    ],
+    "performance_impact": "HIGH_IMPROVEMENT",
+    "prerequisites": [
+      "partitioning"
+    ],
+    "scalability_impact": "HIGH_IMPROVEMENT",
+    "solves": [
+      "SCALABILITY_PRESSURE",
+      "LARGE_TRANSACTIONAL_DATASET",
+      "HIGH_WRITE_PRESSURE",
+      "HIGH_STORAGE_GROWTH",
+      "EXTREME_STORAGE_GROWTH"
+    ],
+    "storage_impact": "NEUTRAL"
+  },
+  {
+    "applicable_when": {
+      "retention_class": [
+        "MEDIUM_TERM",
+        "LONG_TERM"
+      ],
+      "storage_growth": [
+        "MEDIUM",
+        "MODERATE",
+        "HIGH",
+        "EXTREME"
+      ]
+    },
+    "benefits": [
+      "Significant cost reduction by moving cold data to cheaper storage",
+      "Maintains fast access for frequently used data"
+    ],
+    "category": "STORAGE",
+    "conflicts_with": [],
+    "cost_impact": "HIGH_IMPROVEMENT",
+    "description": "Separate data across hot, warm, and cold storage tiers based on access frequency.",
+    "disadvantages": [
+      "Requires data lifecycle classification logic",
+      "Retrieval from cold tiers may have higher latency",
+      "Migration policies need monitoring and tuning"
+    ],
+    "id": "tiered_storage",
+    "implementation_complexity": "MEDIUM",
+    "name": "Tiered Storage",
+    "not_recommended_when": [
+      "All data is accessed uniformly with no clear hot/cold boundary",
+      "Retention is very short (under 6 months)"
+    ],
+    "performance_impact": "SLIGHT_IMPROVEMENT",
+    "prerequisites": [],
+    "scalability_impact": "MODERATE_IMPROVEMENT",
+    "solves": [
+      "HOT_COLD_DATA_MIX",
+      "MODERATE_STORAGE_GROWTH",
+      "HIGH_STORAGE_GROWTH",
+      "EXTREME_STORAGE_GROWTH",
+      "LONG_TERM_RETENTION"
+    ],
+    "storage_impact": "MODERATE_IMPROVEMENT"
+  }
+]

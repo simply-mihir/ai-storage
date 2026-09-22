@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -947,3 +948,18 @@ class TestFamilyChecklist:
             for field in ("storage", "performance", "cost", "scalability", "security"):
                 val = getattr(fam.impacts, field)
                 assert -5 <= val <= 5, f"{fam.id} impacts.{field} = {val}"
+
+
+# ---------------------------------------------------------------------------
+# §31 — Golden Provider Snapshot
+# ---------------------------------------------------------------------------
+
+_GOLDEN_SNAPSHOT_PATH = Path(__file__).parent / "golden_provider_snapshot.json"
+
+
+class TestGoldenProviderSnapshot:
+    def test_provider_output_matches_golden_snapshot(self):
+        with open(_GOLDEN_SNAPSHOT_PATH) as f:
+            expected = json.load(f)
+        actual = sorted(get_techniques(), key=lambda t: t["id"])
+        assert actual == expected
