@@ -8,14 +8,16 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class FamilyCategory(StrEnum):
     """Categories for technique families in KB v2."""
 
     STORAGE = "storage"
+    DATABASE = "database"
     PERFORMANCE = "performance"
+    ANALYTICS = "analytics"
     RELIABILITY = "reliability"
     ARCHITECTURE = "architecture"
     SECURITY = "security"
@@ -123,6 +125,8 @@ class EffectiveTechnique(BaseModel):
     All fields are concrete — no optionals except empty lists.
     Produced by the loader's ``flatten()`` function.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     id: str
     name: str

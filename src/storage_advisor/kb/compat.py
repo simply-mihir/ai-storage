@@ -6,6 +6,12 @@ code changes.
 
 NOTE: The v2 ``security`` impact dimension is dropped in this view
 because the legacy schema has no security impact field.
+
+MIGRATION DEDUPE RULE: while both KBs coexist, the engine reads the
+legacy 19-technique YAML only.  When a technique family is migrated to
+v2, its legacy YAML entry MUST be deleted in the SAME commit and
+``flat_view()`` becomes its sole v1-shaped representation.  Duplicate
+ids across the two KBs are forbidden after migration.
 """
 
 from __future__ import annotations
@@ -30,6 +36,17 @@ _IMPACT_SCORE_TO_LEGACY = {
 }
 
 
+_CATEGORY_TO_LEGACY: dict[str, str] = {
+    "storage": "STORAGE",
+    "database": "DATABASE",
+    "performance": "PERFORMANCE",
+    "analytics": "ANALYTICS",
+    "reliability": "STORAGE",
+    "architecture": "DATABASE",
+    "security": "STORAGE",
+}
+
+
 def _score_to_legacy(score: int) -> str:
     """Map a signed -5..+5 impact score to a legacy ImpactLevel string."""
     return _IMPACT_SCORE_TO_LEGACY.get(score, "NEUTRAL")
@@ -50,7 +67,7 @@ def _technique_to_legacy_dict(tech: EffectiveTechnique) -> dict:
     return {
         "id": tech.id,
         "name": tech.name,
-        "category": tech.category.upper(),
+        "category": _CATEGORY_TO_LEGACY.get(tech.category, tech.category.upper()),
         "description": tech.summary,
         "solves": list(tech.solves),
         "applicable_when": {k: list(v) for k, v in tech.applicable_when.items()},

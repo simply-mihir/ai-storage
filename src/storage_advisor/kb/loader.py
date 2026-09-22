@@ -1,10 +1,14 @@
 """KB v2 loader — discovers YAML files, merges families with variants, and builds a graph.
 
 Merge semantics (family + variant):
-  - Dicts: deep-merge (variant keys override family keys; unset keys kept).
-  - Scalars: variant overrides family.
-  - Lists: variant REPLACES family (a variant extending a family list must
-    restate the full list). ``None`` in a variant field means "inherit".
+  - Dicts: deep-merge recursively (variant keys override family keys;
+    unset keys kept; nested dicts recurse).
+  - Scalars: variant overrides family (``None`` = inherit).
+  - Lists: variant REPLACES family at any depth (a variant extending
+    a family list must restate the full list).
+
+All merge functions are pure — they never mutate their Family or
+Variant inputs.
 """
 
 from __future__ import annotations
@@ -20,12 +24,8 @@ except ImportError:  # pragma: no cover
     nx = None  # type: ignore[assignment]
 
 from storage_advisor.kb.schema import (
-    AvoidWhen,
-    Company,
-    Complexity,
     EffectiveTechnique,
     Family,
-    FamilyCategory,
     Impacts,
     Variant,
 )
@@ -41,6 +41,9 @@ def discover_families(kb_root: Path | None = None) -> list[Family]:
 
     Layout: ``kb_root/<category>/<family>.yaml``
     Each file must have ``schema_version: 2`` at the top level.
+
+    Families are returned in deterministic order: sorted by category
+    directory name, then by YAML filename within each category.
     """
     root = kb_root or _default_kb_root()
     families: list[Family] = []
@@ -56,7 +59,11 @@ def discover_families(kb_root: Path | None = None) -> list[Family]:
 
 
 def _deep_merge_dict(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
-    """Deep-merge two dicts: override keys win, nested dicts recurse."""
+    """Deep-merge two dicts: override keys win, nested dicts recurse.
+
+    Pure — neither ``base`` nor ``override`` is mutated.
+    Lists and scalars at any depth are replaced, not appended.
+    """
     merged = dict(base)
     for key, val in override.items():
         if key in merged and isinstance(merged[key], dict) and isinstance(val, dict):
@@ -68,6 +75,8 @@ def _deep_merge_dict(base: dict[str, Any], override: dict[str, Any]) -> dict[str
 
 def _merge_variant(family: Family, variant: Variant) -> EffectiveTechnique:
     """Merge a single variant with its parent family into an EffectiveTechnique.
+
+    Pure — neither ``family`` nor ``variant`` is mutated.
 
     Merge rules:
       - Scalars: variant value if not None, else family value.
@@ -84,7 +93,11 @@ def _merge_variant(family: Family, variant: Variant) -> EffectiveTechnique:
     benefits = variant.benefits if variant.benefits is not None else list(family.benefits)
     disadvantages = variant.disadvantages if variant.disadvantages is not None else list(family.disadvantages)
     companies = variant.companies if variant.companies is not None else list(family.companies)
-    complexity = variant.implementation_complexity if variant.implementation_complexity is not None else family.implementation_complexity
+    complexity = (
+        variant.implementation_complexity
+        if variant.implementation_complexity is not None
+        else family.implementation_complexity
+    )
 
     if variant.applicable_when is not None:
         applicable = _deep_merge_dict(
@@ -106,8 +119,16 @@ def _merge_variant(family: Family, variant: Variant) -> EffectiveTechnique:
         id=effective_id,
         name=variant.name,
         category=family.category,
-        summary=variant.summary or family.summary,
-        mechanism=variant.mechanism or family.mechanism or "",
+        summary=(
+            variant.summary
+            if variant.summary is not None
+            else family.summary
+        ),
+        mechanism=(
+            variant.mechanism
+            if variant.mechanism is not None
+            else (family.mechanism or "")
+        ),
         solves=solves,
         synergies_with=synergies,
         conflicts_with=conflicts,
@@ -123,7 +144,10 @@ def _merge_variant(family: Family, variant: Variant) -> EffectiveTechnique:
 
 
 def _family_to_effective(family: Family) -> EffectiveTechnique:
-    """Convert a family with no variants into a single EffectiveTechnique."""
+    """Convert a family with no variants into a single EffectiveTechnique.
+
+    Pure — ``family`` is not mutated.
+    """
     return EffectiveTechnique(
         id=family.id,
         name=family.name,
@@ -155,14 +179,17 @@ def _expand_family_refs(
     """
     expanded: list[str] = []
     for ref in refs:
-        if ref in family_to_variants and family_to_variants[ref]:
+        if family_to_variants.get(ref):
             expanded.extend(family_to_variants[ref])
         else:
             expanded.append(ref)
     return expanded
 
 
-def flatten(families: list[Family] | None = None, kb_root: Path | None = None) -> list[EffectiveTechnique]:
+def flatten(
+    families: list[Family] | None = None,
+    kb_root: Path | None = None,
+) -> list[EffectiveTechnique]:
     """Flatten families into a list of EffectiveTechniques.
 
     Variant effective id = ``<family_id>.<variant_id>``.
@@ -170,6 +197,10 @@ def flatten(families: list[Family] | None = None, kb_root: Path | None = None) -
 
     Relationship fields (synergies_with, conflicts_with, requires) that
     reference a family id are expanded to reference all its variant ids.
+
+    Pure: input Family/Variant objects are never mutated.
+    Output order: families by discovery order (sorted file paths),
+    variants in declaration order within each family.
     """
     if families is None:
         families = discover_families(kb_root)
@@ -177,7 +208,9 @@ def flatten(families: list[Family] | None = None, kb_root: Path | None = None) -
     family_to_variants: dict[str, list[str]] = {}
     for fam in families:
         if fam.variants:
-            family_to_variants[fam.id] = [f"{fam.id}.{v.id}" for v in fam.variants]
+            family_to_variants[fam.id] = [
+                f"{fam.id}.{v.id}" for v in fam.variants
+            ]
         else:
             family_to_variants[fam.id] = []
 
@@ -189,41 +222,58 @@ def flatten(families: list[Family] | None = None, kb_root: Path | None = None) -
         else:
             techniques.append(_family_to_effective(fam))
 
-    for tech in techniques:
-        tech.synergies_with = _expand_family_refs(tech.synergies_with, family_to_variants)
-        tech.conflicts_with = _expand_family_refs(tech.conflicts_with, family_to_variants)
-        tech.requires = _expand_family_refs(tech.requires, family_to_variants)
-
-    return techniques
+    return [
+        tech.model_copy(update={
+            "synergies_with": _expand_family_refs(
+                tech.synergies_with, family_to_variants,
+            ),
+            "conflicts_with": _expand_family_refs(
+                tech.conflicts_with, family_to_variants,
+            ),
+            "requires": _expand_family_refs(
+                tech.requires, family_to_variants,
+            ),
+        })
+        for tech in techniques
+    ]
 
 
 def project_graph(
     techniques: list[EffectiveTechnique] | None = None,
     kb_root: Path | None = None,
-) -> "nx.DiGraph":
+) -> nx.DiGraph:
     """Build a NetworkX DiGraph from the effective techniques.
 
     Nodes:
       - Technique ids (kind='technique')
       - Problem ids (kind='problem')
 
-    Edges:
+    Edges (one per logical relationship):
       - SOLVES: technique -> problem (directed)
       - REQUIRES: technique -> technique (directed)
-      - CONFLICTS: technique <-> technique (stored as directed pair, undirected=True)
-      - SYNERGIZES: technique <-> technique (stored as directed pair, undirected=True)
+      - CONFLICTS: sorted(a, b) canonical direction, undirected=True, deduped
+      - SYNERGIZES: sorted(a, b) canonical direction, undirected=True, deduped
+
+    Undirected edges use canonical endpoint order (lexicographically sorted
+    id tuple) and are deduplicated: mutual declarations produce one edge.
     """
     if nx is None:  # pragma: no cover
-        msg = "networkx is required for project_graph(); install it with: pip install networkx"
+        msg = (
+            "networkx is required for project_graph(); "
+            "install it with: pip install networkx"
+        )
         raise ImportError(msg)
 
     if techniques is None:
         techniques = flatten(kb_root=kb_root)
 
     g: nx.DiGraph = nx.DiGraph()
+    seen_conflicts: set[tuple[str, str]] = set()
+    seen_synergies: set[tuple[str, str]] = set()
 
     for tech in techniques:
         g.add_node(tech.id, kind="technique")
+
         for problem_id in tech.solves:
             if not g.has_node(problem_id):
                 g.add_node(problem_id, kind="problem")
@@ -235,15 +285,25 @@ def project_graph(
             g.add_edge(tech.id, req, relation="REQUIRES")
 
         for conflict in tech.conflicts_with:
-            if not g.has_node(conflict):
-                g.add_node(conflict, kind="technique")
-            g.add_edge(tech.id, conflict, relation="CONFLICTS", undirected=True)
-            g.add_edge(conflict, tech.id, relation="CONFLICTS", undirected=True)
+            pair = tuple(sorted((tech.id, conflict)))
+            if pair not in seen_conflicts:
+                seen_conflicts.add(pair)
+                if not g.has_node(conflict):
+                    g.add_node(conflict, kind="technique")
+                g.add_edge(
+                    pair[0], pair[1],
+                    relation="CONFLICTS", undirected=True,
+                )
 
         for syn in tech.synergies_with:
-            if not g.has_node(syn):
-                g.add_node(syn, kind="technique")
-            g.add_edge(tech.id, syn, relation="SYNERGIZES", undirected=True)
-            g.add_edge(syn, tech.id, relation="SYNERGIZES", undirected=True)
+            pair = tuple(sorted((tech.id, syn)))
+            if pair not in seen_synergies:
+                seen_synergies.add(pair)
+                if not g.has_node(syn):
+                    g.add_node(syn, kind="technique")
+                g.add_edge(
+                    pair[0], pair[1],
+                    relation="SYNERGIZES", undirected=True,
+                )
 
     return g
