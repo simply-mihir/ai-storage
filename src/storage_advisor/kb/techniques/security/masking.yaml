@@ -1,0 +1,54 @@
+schema_version: 2
+id: masking
+name: Data Masking
+category: security
+summary: "Obscure sensitive data fields so non-privileged users see redacted or synthetic values while preserving data utility."
+mechanism: "Replaces sensitive column values with deterministic or random transformations (hashing, tokenization, format-preserving encryption) either at ETL time (static) or at query time (dynamic)."
+solves:
+  - COMPLIANCE_REQUIREMENT
+synergies_with:
+  - encryption
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "All users are fully authorized to see raw data"
+    reason: "Masking adds query-time or ETL overhead with no access-control benefit."
+applicable_when:
+  compliance_pressure: [PRESENT]
+implementation_complexity: medium
+impacts:
+  storage: 0
+  performance: -1
+  cost: -1
+  scalability: 0
+  security: 4
+benefits:
+  - "Enables safe sharing of production-like data for development and analytics"
+  - "Reduces breach impact by limiting exposure of sensitive fields"
+  - "Supports role-based data access without separate datasets"
+disadvantages:
+  - "Static masking requires maintaining a separate masked copy"
+  - "Dynamic masking adds query-time latency"
+  - "Poorly configured masks can leak identifiable information"
+companies:
+  - name: Snowflake
+    context: "Dynamic data masking policies for role-based column access."
+  - name: PostgreSQL community
+    context: "Column privileges and anon-style extensions for static masking pipelines."
+variants:
+  - id: static
+    name: Static Masking
+    summary: "Replace sensitive data in a copy of the dataset at ETL time, producing a safe replica."
+    mechanism: "An ETL job reads the source, applies deterministic transformations (SHA-256 hashing, format-preserving encryption, random substitution), and writes a masked copy."
+    implementation_complexity: medium
+    impacts:
+      storage: -1
+      performance: 0
+  - id: dynamic
+    name: Dynamic Masking
+    summary: "Apply masking rules at query time so different roles see different levels of detail from the same table."
+    mechanism: "Database-level policies intercept query results and replace column values in-flight based on the querying role's privileges."
+    implementation_complexity: high
+    impacts:
+      storage: 0
+      performance: -1
