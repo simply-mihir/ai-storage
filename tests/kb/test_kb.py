@@ -376,7 +376,7 @@ class TestFlatView:
         )
         families = discover_families(kb_root)
         view = flat_view(families)
-        assert len(view) == 27
+        assert len(view) == 35
 
 
 # ---------------------------------------------------------------------------
@@ -429,7 +429,9 @@ class TestDiscoverFamilies:
         assert "partitioning" in ids
         assert "backup_strategies" in ids
         assert "multi_region" in ids
-        assert len(families) == 21
+        assert "encryption" in ids
+        assert "bloom_filters" in ids
+        assert len(families) == 26
 
     def test_flatten_all_families(self):
         kb_root = (
@@ -444,7 +446,9 @@ class TestDiscoverFamilies:
         assert "partitioning" in ids
         assert "backup_strategies.snapshots" in ids
         assert "multi_region.active_active" in ids
-        assert len(techs) == 27
+        assert "encryption.at_rest" in ids
+        assert "bloom_filters" in ids
+        assert len(techs) == 35
 
 
 # ---------------------------------------------------------------------------
@@ -691,16 +695,23 @@ class TestDeterminism:
             "indexing", "partitioning", "replication",
             "schema_optimization", "sharding",
             # performance/
+            "bloom_filters",
             "caching.read_cache", "caching.write_behind",
             "data_pruning", "materialized_views", "query_optimization",
             # reliability/
             "backup_strategies.snapshots",
             "backup_strategies.continuous_backup_pitr",
+            # security/
+            "encryption.at_rest", "encryption.in_transit",
+            "masking.static", "masking.dynamic",
             # storage/
-            "archiving", "chunking",
+            "archiving", "chunking", "compaction",
             "compression.lossless", "compression.lossy",
             "compression.adaptive", "compression.delta",
-            "deduplication", "lifecycle_management",
+            "deduplication",
+            "file_format_optimization.parquet",
+            "file_format_optimization.orc",
+            "lifecycle_management",
             "object_storage", "tiered_storage",
         ]
         assert ids == expected
@@ -857,3 +868,82 @@ class TestProviderIntegration:
         for entry in result:
             assert "id" in entry
             assert isinstance(entry["id"], str)
+
+    def test_live_provider_no_duplicate_ids(self):
+        result = get_techniques()
+        ids = [e["id"] for e in result]
+        assert len(ids) == len(set(ids))
+
+
+# ---------------------------------------------------------------------------
+# 28. Full KB validation: zero violations
+# ---------------------------------------------------------------------------
+
+class TestFullKBValidation:
+    def test_zero_violations(self):
+        families = discover_families()
+        report = validate_kb(families)
+        assert not report.violations, f"Unexpected violations: {report.violations}"
+
+    def test_all_families_load(self):
+        families = discover_families()
+        assert len(families) >= 21
+
+
+# ---------------------------------------------------------------------------
+# 29. Warnings snapshot
+# ---------------------------------------------------------------------------
+
+class TestWarningsSnapshot:
+    def test_warnings_match_snapshot(self):
+        import json
+
+        snapshot_path = Path(__file__).parent / "warnings_snapshot.json"
+        snapshot = json.loads(snapshot_path.read_text())
+
+        families = discover_families()
+        report = validate_kb(families)
+
+        assert sorted(report.warnings) == snapshot["warnings"]
+        assert report.violations == snapshot["violations"]
+
+
+# ---------------------------------------------------------------------------
+# 30. Per-family checklist guard
+# ---------------------------------------------------------------------------
+
+_REQUIRED_FAMILY_FIELDS = {
+    "id", "name", "category", "summary", "mechanism",
+    "solves", "avoid_when", "impacts", "benefits", "disadvantages",
+}
+
+
+class TestFamilyChecklist:
+    def test_every_family_has_required_fields(self):
+        families = discover_families()
+        for fam in families:
+            dump = fam.model_dump()
+            missing = _REQUIRED_FAMILY_FIELDS - set(dump.keys())
+            assert not missing, f"{fam.id} missing fields: {missing}"
+
+    def test_every_family_has_at_least_one_solve(self):
+        families = discover_families()
+        for fam in families:
+            assert fam.solves, f"{fam.id} has no solves"
+
+    def test_every_family_has_at_least_one_avoid_when(self):
+        families = discover_families()
+        for fam in families:
+            assert fam.avoid_when, f"{fam.id} has no avoid_when"
+
+    def test_every_family_has_mechanism(self):
+        families = discover_families()
+        for fam in families:
+            assert fam.mechanism, f"{fam.id} has no mechanism"
+
+    def test_no_impact_exceeds_bounds(self):
+        families = discover_families()
+        for fam in families:
+            for field in ("storage", "performance", "cost", "scalability", "security"):
+                val = getattr(fam.impacts, field)
+                assert -5 <= val <= 5, f"{fam.id} impacts.{field} = {val}"

@@ -14,6 +14,7 @@ kb/
 ├── loader.py          # YAML discovery, merge, flatten, graph
 ├── validate.py        # Integrity checks (violations + warnings)
 ├── compat.py          # flat_view() → legacy-shaped dicts
+├── provider.py        # get_techniques() — single engine entry point
 └── techniques/
     └── <category>/
         └── <family>.yaml    # schema_version: 2
@@ -188,26 +189,38 @@ forbidden.
 
 ### Enums
 
-- **FamilyCategory**: `storage`, `performance`, `reliability`,
-  `architecture`, `security`
+- **FamilyCategory**: `storage`, `database`, `performance`, `analytics`,
+  `reliability`, `architecture`, `security`
 - **Complexity**: `low`, `medium`, `high`
 
 ---
 
-## Legacy Coexistence
+## Provider Seam
 
-### Migration Dedupe Rule
+`kb/provider.py` exposes `get_techniques() -> list[dict]`, the single
+entry point for the recommendation engine.  It unions legacy YAML
+entries with v2 `flat_view()` output:
 
-While both the legacy 19-technique YAML (`configs/techniques.yaml`)
-and KB v2 coexist:
+1. Load all entries from `configs/techniques.yaml` (the legacy registry).
+2. Load all effective techniques from v2 `flat_view()`.
+3. For each legacy entry, substitute the v2 version if an exact ID
+   match exists (**v2 wins** on collision).
+4. v2-only entries (no matching legacy ID) are excluded from the
+   engine-visible set.
 
-1. The recommendation engine reads the **legacy KB only**.
-2. `flat_view()` in `kb/compat.py` converts v2 families to
-   legacy-shaped dicts for future engine consumption.
-3. When a technique family is migrated to v2, its legacy YAML entry
-   **MUST be deleted in the same commit**.  `flat_view()` becomes its
-   sole v1-shaped representation.
-4. **Duplicate ids** across the two KBs are forbidden after migration.
+`knowledge/technique_catalog.py`'s `load_techniques()` calls the
+provider, making this the only KB access seam for the engine.
+
+### Legacy Coexistence
+
+The legacy YAML (`configs/techniques.yaml`) remains as the engine's
+**technique registry** — it defines the set of 19 IDs the engine
+operates on.  All 19 legacy techniques also exist as v2 families;
+the provider substitutes the richer v2 content at load time.
+
+v2-only families (backup_strategies, multi_region, encryption, masking,
+compaction, file_format_optimization, bloom_filters) are NOT
+engine-visible until explicitly registered in the legacy YAML.
 
 The v2 `security` impact dimension is dropped by `flat_view()` because
 the legacy schema has no security impact field.
