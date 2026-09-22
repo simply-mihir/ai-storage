@@ -1,0 +1,169 @@
+schema_version: 2
+id: compression
+name: Compression
+category: storage
+summary: >-
+  Reduce data size using lossless or lossy algorithms to lower storage costs
+  and improve I/O throughput.
+mechanism: >-
+  Applies encoding algorithms (gzip, zstd, LZ4, snappy, or lossy codecs) to
+  data blocks before writing to storage, decompressing on read. Achieves
+  30-70% footprint reduction depending on data entropy.
+solves:
+  - MODERATE_STORAGE_GROWTH
+  - HIGH_STORAGE_GROWTH
+  - EXTREME_STORAGE_GROWTH
+  - HOT_COLD_DATA_MIX
+applicable_when:
+  storage_growth: [MEDIUM, MODERATE, HIGH, EXTREME]
+synergies_with:
+  - caching
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Data is already compressed (images, videos in compressed formats)"
+    reason: "Re-compressing yields negligible savings and wastes CPU cycles"
+  - condition: "Ultra-low latency random reads are required and CPU budget is tight"
+    reason: "Decompression adds per-read CPU overhead that violates latency SLOs"
+implementation_complexity: low
+impacts:
+  storage: 4
+  performance: 1
+  cost: 4
+  scalability: 3
+  security: 0
+benefits:
+  - "Reduces storage footprint by 30-70% depending on data type"
+  - "Reduces network transfer costs"
+  - "Improves I/O throughput for sequential reads"
+disadvantages:
+  - "CPU overhead for compression/decompression"
+  - "May increase latency for random access patterns"
+  - "Compression ratio varies significantly by data type"
+companies:
+  - name: Netflix
+    context: >-
+      Uses zstd compression on columnar Parquet files in their data warehouse
+      to reduce S3 storage costs by ~60%.
+  - name: Facebook
+    context: >-
+      Developed and open-sourced zstd, achieving 2-3x better compression
+      ratios than gzip at similar speeds for internal data pipelines.
+
+variants:
+  - id: lossless
+    name: Lossless Compression
+    summary: >-
+      Bit-exact reconstruction after decompression — no data loss. Suitable
+      for structured data, logs, and anything requiring fidelity.
+    mechanism: >-
+      Dictionary and entropy coding (gzip, zstd, LZ4, snappy) applied at
+      block or file level. Typical ratios 2:1 to 5:1 on text/structured data.
+    impacts:
+      storage: 4
+      performance: 1
+      cost: 4
+      scalability: 3
+      security: 0
+    benefits:
+      - "Reduces storage footprint by 30-70% depending on data type"
+      - "Reduces network transfer costs"
+      - "Improves I/O throughput for sequential reads"
+      - "Guarantees bit-exact data fidelity on decompression"
+    disadvantages:
+      - "CPU overhead for compression/decompression"
+      - "May increase latency for random access patterns"
+      - "Compression ratio varies significantly by data type"
+
+  - id: lossy
+    name: Lossy Compression
+    summary: >-
+      Accepts controlled data loss for dramatically higher compression ratios.
+      Suitable for images, video, sensor telemetry where approximate values suffice.
+    mechanism: >-
+      Quantization and transform coding (JPEG, H.264, downsampling) discard
+      information below a configurable quality threshold. Ratios 10:1 to 100:1.
+    applicable_when:
+      storage_growth: [HIGH, EXTREME]
+      data_type: [MEDIA, TELEMETRY]
+    impacts:
+      storage: 5
+      performance: 0
+      cost: 5
+      scalability: 3
+      security: 0
+    avoid_when:
+      - condition: "Data is already compressed (images, videos in compressed formats)"
+        reason: "Re-compressing yields negligible savings and wastes CPU cycles"
+      - condition: "Regulatory or audit requirements demand bit-exact data preservation"
+        reason: "Lossy compression irreversibly discards information"
+    benefits:
+      - "10-100x compression ratios on media and sensor data"
+      - "Massive storage cost reduction for large media libraries"
+    disadvantages:
+      - "Irreversible information loss"
+      - "Quality degradation may be unacceptable for some use cases"
+      - "Requires careful quality threshold tuning per data type"
+
+  - id: adaptive
+    name: Adaptive Compression
+    summary: >-
+      Automatically selects the best codec and level per data segment based
+      on content analysis, balancing ratio against CPU cost.
+    mechanism: >-
+      A routing layer samples each data block, classifies its entropy profile,
+      and dispatches to the optimal codec (e.g., zstd for text, LZ4 for
+      low-latency paths, snappy for already-compact binary).
+    implementation_complexity: high
+    requires:
+      - compression.lossless
+    impacts:
+      storage: 5
+      performance: 2
+      cost: 5
+      scalability: 4
+      security: 0
+    benefits:
+      - "Reduces storage footprint by 30-70% depending on data type"
+      - "Reduces network transfer costs"
+      - "Improves I/O throughput for sequential reads"
+      - "Optimises codec selection per segment without manual tuning"
+    disadvantages:
+      - "CPU overhead for compression/decompression"
+      - "Additional complexity in codec routing logic"
+      - "Requires per-segment metadata to track which codec was used"
+    companies:
+      - name: Uber
+        context: >-
+          Uses adaptive compression in their Hadoop data lake, automatically
+          switching between zstd and LZ4 based on data temperature.
+
+  - id: delta
+    name: Delta Compression
+    summary: >-
+      Stores only the differences between successive versions or records,
+      achieving very high ratios on slowly changing data.
+    mechanism: >-
+      Computes binary or semantic diffs between consecutive records/versions
+      and stores only the delta. Reconstruction replays deltas from a
+      periodic full snapshot.
+    synergies_with:
+      - caching.read_cache
+    impacts:
+      storage: 5
+      performance: -1
+      cost: 5
+      scalability: 2
+      security: 0
+    avoid_when:
+      - condition: "Data is already compressed (images, videos in compressed formats)"
+        reason: "Re-compressing yields negligible savings and wastes CPU cycles"
+      - condition: "Data has no temporal locality or version history"
+        reason: "Delta encoding requires sequential records to diff against"
+    benefits:
+      - "Extremely high compression ratios for slowly-changing data (10:1 to 100:1)"
+      - "Ideal for version-controlled documents, configs, and audit logs"
+    disadvantages:
+      - "Read latency increases due to delta chain reconstruction"
+      - "Periodic full snapshots needed to bound reconstruction cost"
+      - "Complex implementation for non-sequential access patterns"

@@ -1,0 +1,122 @@
+schema_version: 2
+id: caching
+name: Caching
+category: performance
+summary: >-
+  Store frequently accessed data in a fast in-memory cache to reduce
+  database load and response latency.
+mechanism: >-
+  Interposes an in-memory key-value store (Redis, Memcached, or
+  application-level LRU) between the application and the primary
+  data store. Cache hits bypass the database entirely; misses populate
+  the cache for subsequent requests.
+solves:
+  - HIGH_READ_LATENCY
+  - SCALABILITY_PRESSURE
+applicable_when:
+  read_pressure: [HIGH]
+  latency_class: [LOW_LATENCY, ULTRA_LOW_LATENCY]
+synergies_with:
+  - compression
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Data changes on every read (no repeat reads)"
+    reason: "Cache hit rate approaches zero, wasting memory without reducing load"
+  - condition: "Write-dominant workload with negligible read traffic"
+    reason: "Cache entries are invalidated before they can be reused"
+  - condition: "Dataset is small enough to fit in database memory"
+    reason: "The database buffer pool already serves as an effective cache"
+implementation_complexity: medium
+impacts:
+  storage: 0
+  performance: 5
+  cost: -2
+  scalability: 4
+  security: -1
+benefits:
+  - "10-100x latency reduction for cached data"
+  - "Dramatically reduces database read load"
+  - "Handles traffic spikes via cache absorption"
+disadvantages:
+  - "Cache invalidation complexity"
+  - "Memory cost for cache infrastructure"
+  - "Stale data risk without proper TTL strategy"
+companies:
+  - name: Twitter
+    context: >-
+      Uses Redis and Memcached clusters to cache timeline data, achieving
+      sub-millisecond reads for hundreds of millions of users.
+  - name: GitHub
+    context: >-
+      Uses Memcached to cache repository metadata and rendered Markdown,
+      reducing database load by over 80%.
+
+variants:
+  - id: read_cache
+    name: Read-Through Cache
+    summary: >-
+      Application reads go through the cache first; on a miss the cache
+      itself fetches from the database, populates, and returns.
+    mechanism: >-
+      A cache-aside or read-through pattern where the cache client
+      intercepts all reads. Misses trigger a synchronous database fetch
+      that auto-populates the cache entry with a configured TTL.
+    impacts:
+      storage: 0
+      performance: 5
+      cost: -2
+      scalability: 4
+      security: -1
+    benefits:
+      - "10-100x latency reduction for cached data"
+      - "Dramatically reduces database read load"
+      - "Handles traffic spikes via cache absorption"
+      - "Simple integration — reads are transparently cached"
+    disadvantages:
+      - "Cache invalidation complexity"
+      - "Memory cost for cache infrastructure"
+      - "Stale data risk without proper TTL strategy"
+      - "First-read latency includes cache-miss penalty"
+
+  - id: write_behind
+    name: Write-Behind Cache
+    summary: >-
+      Writes go to the cache first and are asynchronously flushed to the
+      database, reducing write latency at the cost of durability risk.
+    mechanism: >-
+      The application writes to the cache, which acknowledges immediately.
+      A background worker drains dirty entries to the database in batches,
+      coalescing multiple writes to the same key.
+    conflicts_with:
+      - compression.lossy
+    requires:
+      - caching.read_cache
+    implementation_complexity: high
+    impacts:
+      storage: 0
+      performance: 4
+      cost: -3
+      scalability: 3
+      security: -2
+    avoid_when:
+      - condition: "Data changes on every read (no repeat reads)"
+        reason: "Cache hit rate approaches zero, wasting memory without reducing load"
+      - condition: "Strict durability guarantees required (financial transactions)"
+        reason: >-
+          Asynchronous flush means data can be lost if the cache node
+          fails before the background write completes
+    benefits:
+      - "Near-zero write latency from the application perspective"
+      - "Write coalescing reduces database write IOPS"
+      - "Smooths out write spikes"
+    disadvantages:
+      - "Risk of data loss if cache node crashes before flush"
+      - "Complex failure recovery and ordering semantics"
+      - "Higher memory cost for dirty write buffers"
+      - "Cache invalidation complexity"
+    companies:
+      - name: Amazon
+        context: >-
+          DynamoDB Accelerator (DAX) implements write-through and
+          write-behind caching for DynamoDB tables.
