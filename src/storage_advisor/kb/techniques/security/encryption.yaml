@@ -1,6 +1,7 @@
 schema_version: 2
 id: encryption
 name: Encryption
+engine_exposure: v2_only
 category: security
 summary: "Protect data confidentiality by encrypting it at rest and in transit using industry-standard algorithms."
 mechanism: "Applies symmetric (AES-256) or asymmetric (RSA, ECDSA) cryptographic algorithms with key management to render data unreadable without the correct decryption key."

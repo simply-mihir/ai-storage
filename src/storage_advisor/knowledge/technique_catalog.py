@@ -1,26 +1,24 @@
-"""Technique Catalog — loads and queries the knowledge base from YAML.
+"""Technique Catalog — loads and queries the knowledge base.
 
 The single KB load point for the engine.  Delegates to
-``storage_advisor.kb.provider`` which unions legacy YAML with KB v2
-families (v2 wins on ID collision).
+``storage_advisor.kb.provider`` which returns the v2 family-level
+rollup filtered to engine-visible families.
 """
 
 from __future__ import annotations
-
-from pathlib import Path
 
 from storage_advisor.domain.techniques import Technique
 from storage_advisor.exceptions import ConfigurationError
 from storage_advisor.kb.provider import get_techniques as _provider_get_techniques
 
 
-def load_techniques(path: Path | None = None) -> list[Technique]:
+def load_techniques() -> list[Technique]:
     """Load and validate all techniques via the KB provider.
 
-    Raises ConfigurationError if the file is missing, malformed, or
+    Raises ConfigurationError if the provider returns nothing or
     any technique fails Pydantic validation.
     """
-    entries = _provider_get_techniques(legacy_path=path)
+    entries = _provider_get_techniques()
     if not entries:
         raise ConfigurationError("Knowledge base returned no techniques")
 

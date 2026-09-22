@@ -1,6 +1,7 @@
 schema_version: 2
 id: masking
 name: Data Masking
+engine_exposure: v2_only
 category: security
 summary: "Obscure sensitive data fields so non-privileged users see redacted or synthetic values while preserving data utility."
 mechanism: "Replaces sensitive column values with deterministic or random transformations (hashing, tokenization, format-preserving encryption) either at ETL time (static) or at query time (dynamic)."

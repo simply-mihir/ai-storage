@@ -7,6 +7,7 @@ avoid_when conditions, company references, and relationship edges.
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -109,6 +110,10 @@ class Family(BaseModel):
     disadvantages: list[str] = Field(default_factory=list)
     companies: list[Company] = Field(default_factory=list)
     variants: list[Variant] = Field(default_factory=list)
+
+    engine_exposure: Literal["legacy", "v2_only"] = "legacy"
+    live_relationships: bool = False
+    legacy_category: str | None = None
 
     @field_validator("schema_version")
     @classmethod

@@ -1,6 +1,7 @@
 schema_version: 2
 id: backup_strategies
 name: Backup Strategies
+engine_exposure: v2_only
 category: reliability
 summary: "Protect data against loss through scheduled snapshots or continuous point-in-time recovery."
 mechanism: "Captures consistent data copies via filesystem or storage-level snapshots, or streams write-ahead log entries to a backup target for continuous point-in-time recovery."

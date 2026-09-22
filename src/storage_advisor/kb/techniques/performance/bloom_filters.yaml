@@ -1,6 +1,7 @@
 schema_version: 2
 id: bloom_filters
 name: Bloom Filters
+engine_exposure: v2_only
 category: performance
 summary: "Use probabilistic data structures to quickly test set membership and skip unnecessary disk reads."
 mechanism: "Hashes each key through k independent hash functions into a bit array; a lookup that finds all k bits set reports 'possibly present' (with a tunable false-positive rate), while any unset bit guarantees absence."

@@ -1,6 +1,7 @@
 schema_version: 2
 id: compaction
 name: Compaction
+engine_exposure: v2_only
 category: storage
 summary: "Merge and reorganize storage files to reclaim space, reduce read amplification, and improve query performance in LSM-tree and append-only storage engines."
 mechanism: "Background process reads multiple sorted-string-table (SSTable) files, merges overlapping key ranges, discards tombstones and obsolete versions, and writes consolidated files with updated indexes."

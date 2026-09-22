@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 
 import pytest
-import yaml
 from pydantic import ValidationError
 
 from storage_advisor.kb.compat import flat_view
@@ -336,7 +335,7 @@ class TestFlatView:
             "applicable_when", "conflicts_with", "benefits", "disadvantages",
             "implementation_complexity", "storage_impact",
             "performance_impact", "cost_impact", "scalability_impact",
-            "prerequisites", "not_recommended_when",
+            "prerequisites", "not_recommended_when", "engine_exposure",
         }
         assert set(d.keys()) == expected_keys
 
@@ -377,7 +376,7 @@ class TestFlatView:
         )
         families = discover_families(kb_root)
         view = flat_view(families)
-        assert len(view) == 35
+        assert len(view) == 26
 
 
 # ---------------------------------------------------------------------------
@@ -719,131 +718,75 @@ class TestDeterminism:
 
 
 # ---------------------------------------------------------------------------
-# 24. Provider: v2 wins on collision
+# 24. Provider: engine_exposure filtering
 # ---------------------------------------------------------------------------
 
-class TestProviderV2Wins:
-    def test_v2_substitutes_matching_id(self, tmp_path, monkeypatch):
-        legacy_yaml = {
-            "techniques": [
-                {"id": "dedup", "name": "Legacy Dedup", "category": "STORAGE"},
-                {"id": "other", "name": "Other Tech", "category": "DATABASE"},
-            ],
-        }
-        legacy_path = tmp_path / "techniques.yaml"
-        legacy_path.write_text(yaml.dump(legacy_yaml))
-
-        v2_entry = {"id": "dedup", "name": "V2 Dedup", "category": "STORAGE"}
-        monkeypatch.setattr(
-            "storage_advisor.kb.provider.flat_view", lambda: [v2_entry],
-        )
-
-        result = get_techniques(legacy_path=legacy_path)
-        dedup = next(e for e in result if e["id"] == "dedup")
-        assert dedup["name"] == "V2 Dedup"
-        assert len(result) == 2
-
-    def test_count_preserved_on_collision(self, tmp_path, monkeypatch):
-        legacy_yaml = {
-            "techniques": [
-                {"id": "a", "name": "A"},
-                {"id": "b", "name": "B"},
-                {"id": "c", "name": "C"},
-            ],
-        }
-        legacy_path = tmp_path / "techniques.yaml"
-        legacy_path.write_text(yaml.dump(legacy_yaml))
-
-        v2_entries = [
-            {"id": "a", "name": "V2-A"},
-            {"id": "b", "name": "V2-B"},
+class TestProviderExposureFiltering:
+    def test_only_legacy_exposure_returned(self, monkeypatch):
+        entries = [
+            {"id": "a", "name": "A", "engine_exposure": "legacy"},
+            {"id": "b", "name": "B", "engine_exposure": "v2_only"},
+            {"id": "c", "name": "C", "engine_exposure": "legacy"},
         ]
         monkeypatch.setattr(
-            "storage_advisor.kb.provider.flat_view", lambda: v2_entries,
+            "storage_advisor.kb.provider.flat_view", lambda: entries,
         )
+        result = get_techniques()
+        assert len(result) == 2
+        assert {e["id"] for e in result} == {"a", "c"}
 
-        result = get_techniques(legacy_path=legacy_path)
-        assert len(result) == 3
-        assert result[0]["name"] == "V2-A"
-        assert result[1]["name"] == "V2-B"
-        assert result[2]["name"] == "C"
-
-
-# ---------------------------------------------------------------------------
-# 25. Provider: unmigrated legacy still served
-# ---------------------------------------------------------------------------
-
-class TestProviderLegacyPassthrough:
-    def test_legacy_entries_pass_through_when_no_v2_match(
-        self, tmp_path, monkeypatch,
-    ):
-        legacy_yaml = {
-            "techniques": [
-                {"id": "legacy_only", "name": "Legacy Only", "category": "STORAGE"},
-            ],
-        }
-        legacy_path = tmp_path / "techniques.yaml"
-        legacy_path.write_text(yaml.dump(legacy_yaml))
-
+    def test_engine_exposure_stripped_from_output(self, monkeypatch):
+        entries = [
+            {"id": "x", "name": "X", "engine_exposure": "legacy", "category": "STORAGE"},
+        ]
         monkeypatch.setattr(
-            "storage_advisor.kb.provider.flat_view", list,
+            "storage_advisor.kb.provider.flat_view", lambda: entries,
         )
+        result = get_techniques()
+        assert "engine_exposure" not in result[0]
 
-        result = get_techniques(legacy_path=legacy_path)
-        assert len(result) == 1
-        assert result[0]["id"] == "legacy_only"
-        assert result[0]["name"] == "Legacy Only"
-
-    def test_v2_only_entries_excluded(self, tmp_path, monkeypatch):
-        legacy_yaml = {"techniques": [{"id": "a", "name": "A"}]}
-        legacy_path = tmp_path / "techniques.yaml"
-        legacy_path.write_text(yaml.dump(legacy_yaml))
-
+    def test_v2_only_entries_excluded(self, monkeypatch):
+        entries = [
+            {"id": "v2_only", "name": "V2 Only", "engine_exposure": "v2_only"},
+        ]
         monkeypatch.setattr(
-            "storage_advisor.kb.provider.flat_view",
-            lambda: [{"id": "v2_only", "name": "V2 Only"}],
+            "storage_advisor.kb.provider.flat_view", lambda: entries,
         )
-
-        result = get_techniques(legacy_path=legacy_path)
-        assert len(result) == 1
-        assert result[0]["id"] == "a"
+        result = get_techniques()
+        assert len(result) == 0
 
 
 # ---------------------------------------------------------------------------
-# 26. Provider: returned records pass legacy-shape contract
+# 25. Provider: returned records pass legacy-shape contract
 # ---------------------------------------------------------------------------
 
 class TestProviderLegacyShape:
-    def test_v2_substituted_entry_has_legacy_keys(self, tmp_path, monkeypatch):
-        legacy_yaml = {
-            "techniques": [{"id": "test_tech", "name": "Old Name"}],
-        }
-        legacy_path = tmp_path / "techniques.yaml"
-        legacy_path.write_text(yaml.dump(legacy_yaml))
-
-        v2_entry = {
-            "id": "test_tech",
-            "name": "New Name",
-            "category": "STORAGE",
-            "description": "A summary",
-            "solves": ["MODERATE_STORAGE_GROWTH"],
-            "applicable_when": {"storage_growth": ["HIGH"]},
-            "conflicts_with": [],
-            "benefits": ["saves space"],
-            "disadvantages": ["cpu cost"],
-            "implementation_complexity": "MEDIUM",
-            "storage_impact": "HIGH_IMPROVEMENT",
-            "performance_impact": "SLIGHT_INCREASE",
-            "cost_impact": "MODERATE_IMPROVEMENT",
-            "scalability_impact": "NEUTRAL",
-            "prerequisites": [],
-            "not_recommended_when": ["already compressed"],
-        }
+    def test_provider_output_has_legacy_keys(self, monkeypatch):
+        entries = [
+            {
+                "id": "test_tech",
+                "name": "New Name",
+                "category": "STORAGE",
+                "description": "A summary",
+                "solves": ["MODERATE_STORAGE_GROWTH"],
+                "applicable_when": {"storage_growth": ["HIGH"]},
+                "conflicts_with": [],
+                "benefits": ["saves space"],
+                "disadvantages": ["cpu cost"],
+                "implementation_complexity": "MEDIUM",
+                "storage_impact": "HIGH_IMPROVEMENT",
+                "performance_impact": "SLIGHT_INCREASE",
+                "cost_impact": "MODERATE_IMPROVEMENT",
+                "scalability_impact": "NEUTRAL",
+                "prerequisites": [],
+                "not_recommended_when": ["already compressed"],
+                "engine_exposure": "legacy",
+            },
+        ]
         monkeypatch.setattr(
-            "storage_advisor.kb.provider.flat_view", lambda: [v2_entry],
+            "storage_advisor.kb.provider.flat_view", lambda: entries,
         )
-
-        result = get_techniques(legacy_path=legacy_path)
+        result = get_techniques()
         d = result[0]
         expected_keys = {
             "id", "name", "category", "description", "solves",
@@ -852,7 +795,7 @@ class TestProviderLegacyShape:
             "performance_impact", "cost_impact", "scalability_impact",
             "prerequisites", "not_recommended_when",
         }
-        assert expected_keys.issubset(set(d.keys()))
+        assert set(d.keys()) == expected_keys
 
 
 # ---------------------------------------------------------------------------

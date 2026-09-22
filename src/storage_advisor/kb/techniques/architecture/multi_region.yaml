@@ -1,6 +1,7 @@
 schema_version: 2
 id: multi_region
 name: Multi-Region Deployment
+engine_exposure: v2_only
 category: architecture
 summary: "Deploy data and services across multiple geographic regions for disaster recovery and low-latency global access."
 mechanism: "Replicates data and compute across geographically separated regions with routing policies that direct traffic to the nearest or healthiest region."

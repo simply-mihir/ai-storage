@@ -1,25 +1,22 @@
 """KB v2 → v1 compatibility layer.
 
 Produces legacy-shaped dicts matching the flat YAML schema so the
-existing recommendation engine could consume KB v2 data without
-code changes.
+existing recommendation engine can consume KB v2 data without code
+changes.
 
-NOTE: The v2 ``security`` impact dimension is dropped in this view
-because the legacy schema has no security impact field.
+The rollup emits ONE record per family using family-level fields only.
+Variants are v2-graph refinements and do not appear in this view.
 
-MIGRATION DEDUPE RULE: while both KBs coexist, the engine reads the
-legacy 19-technique YAML only.  When a technique family is migrated to
-v2, its legacy YAML entry MUST be deleted in the SAME commit and
-``flat_view()`` becomes its sole v1-shaped representation.  Duplicate
-ids across the two KBs are forbidden after migration.
+NOTE: The v2 ``security`` impact dimension is dropped because the
+legacy schema has no security impact field.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from storage_advisor.kb.loader import flatten
-from storage_advisor.kb.schema import EffectiveTechnique, Family
+from storage_advisor.kb.loader import discover_families
+from storage_advisor.kb.schema import Family
 
 _IMPACT_SCORE_TO_LEGACY = {
     5: "HIGH_IMPROVEMENT",
@@ -35,8 +32,7 @@ _IMPACT_SCORE_TO_LEGACY = {
     -5: "MODERATE_INCREASE",
 }
 
-
-_CATEGORY_TO_LEGACY: dict[str, str] = {
+V2_TO_LEGACY_CATEGORY: dict[str, str] = {
     "storage": "STORAGE",
     "database": "DATABASE",
     "performance": "PERFORMANCE",
@@ -52,35 +48,33 @@ def _score_to_legacy(score: int) -> str:
     return _IMPACT_SCORE_TO_LEGACY.get(score, "NEUTRAL")
 
 
-def _technique_to_legacy_dict(tech: EffectiveTechnique) -> dict:
-    """Convert one EffectiveTechnique to a legacy-shaped dict.
+def _family_to_legacy_dict(fam: Family) -> dict:
+    """Convert one Family to a legacy-shaped dict using family-level fields only.
 
     The output matches the keys consumed by
-    ``storage_advisor.domain.techniques.Technique``:
-    id, name, category, solves, applicable_when, conflicts_with,
-    benefits, disadvantages, implementation_complexity, and the four
-    impact fields (storage, performance, cost, scalability).
-
-    The v2 ``security`` impact is intentionally dropped because the
-    legacy schema has no security impact field.
+    ``storage_advisor.domain.techniques.Technique``.
     """
+    cat = fam.legacy_category or V2_TO_LEGACY_CATEGORY.get(
+        fam.category, fam.category.upper()
+    )
     return {
-        "id": tech.id,
-        "name": tech.name,
-        "category": _CATEGORY_TO_LEGACY.get(tech.category, tech.category.upper()),
-        "description": tech.summary,
-        "solves": list(tech.solves),
-        "applicable_when": {k: list(v) for k, v in tech.applicable_when.items()},
-        "conflicts_with": list(tech.conflicts_with),
-        "benefits": list(tech.benefits),
-        "disadvantages": list(tech.disadvantages),
-        "implementation_complexity": tech.implementation_complexity.upper(),
-        "storage_impact": _score_to_legacy(tech.impacts.storage),
-        "performance_impact": _score_to_legacy(tech.impacts.performance),
-        "cost_impact": _score_to_legacy(tech.impacts.cost),
-        "scalability_impact": _score_to_legacy(tech.impacts.scalability),
-        "prerequisites": list(tech.requires),
-        "not_recommended_when": [aw.condition for aw in tech.avoid_when],
+        "id": fam.id,
+        "name": fam.name,
+        "category": cat,
+        "description": fam.summary,
+        "solves": list(fam.solves),
+        "applicable_when": {k: list(v) for k, v in fam.applicable_when.items()},
+        "conflicts_with": list(fam.conflicts_with) if fam.live_relationships else [],
+        "benefits": list(fam.benefits),
+        "disadvantages": list(fam.disadvantages),
+        "implementation_complexity": fam.implementation_complexity.upper(),
+        "storage_impact": _score_to_legacy(fam.impacts.storage),
+        "performance_impact": _score_to_legacy(fam.impacts.performance),
+        "cost_impact": _score_to_legacy(fam.impacts.cost),
+        "scalability_impact": _score_to_legacy(fam.impacts.scalability),
+        "prerequisites": list(fam.requires),
+        "not_recommended_when": [aw.condition for aw in fam.avoid_when],
+        "engine_exposure": fam.engine_exposure,
     }
 
 
@@ -88,13 +82,16 @@ def flat_view(
     families: list[Family] | None = None,
     kb_root: Path | None = None,
 ) -> list[dict]:
-    """Return legacy-shaped dicts for all effective techniques in KB v2.
+    """Return legacy-shaped dicts for all families in KB v2.
 
-    Each dict has the same keys as a v1 technique entry, suitable for
-    constructing ``storage_advisor.domain.techniques.Technique`` instances.
+    Each dict has the same keys as a v1 technique entry (plus
+    ``engine_exposure``), suitable for constructing
+    ``storage_advisor.domain.techniques.Technique`` instances after
+    stripping the extra field.
 
-    The v2 ``security`` impact dimension is dropped because the legacy
-    schema does not include it.
+    Emits ONE record per family using family-level fields only.
+    Variants are v2-graph refinements and do not appear in this view.
     """
-    techniques = flatten(families=families, kb_root=kb_root)
-    return [_technique_to_legacy_dict(t) for t in techniques]
+    if families is None:
+        families = discover_families(kb_root=kb_root)
+    return [_family_to_legacy_dict(fam) for fam in families]
