@@ -1,0 +1,39 @@
+schema_version: 2
+id: archiving
+name: Archiving
+category: storage
+summary: "Move historical or rarely accessed data to low-cost archival storage."
+mechanism: "Identifies cold data via age or access-frequency thresholds and migrates it to archival tiers (e.g. Glacier, tape) with retrieval SLAs measured in minutes to hours."
+solves:
+  - LONG_TERM_RETENTION
+  - HOT_COLD_DATA_MIX
+  - MODERATE_STORAGE_GROWTH
+  - HIGH_STORAGE_GROWTH
+  - EXTREME_STORAGE_GROWTH
+synergies_with:
+  - lifecycle_management
+  - tiered_storage
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "All data needs to be accessible with low latency"
+    reason: "Archival retrieval takes minutes to hours."
+  - condition: "Retention period is less than 1 year"
+    reason: "Short-lived data is deleted before archival yields savings."
+applicable_when:
+  retention_class: [LONG_TERM]
+implementation_complexity: medium
+impacts:
+  storage: 4
+  performance: 0
+  cost: 4
+  scalability: 3
+  security: 0
+benefits:
+  - "Lowest cost per GB for long-term data preservation"
+  - "Satisfies regulatory retention requirements"
+disadvantages:
+  - "High retrieval latency (minutes to hours)"
+  - "Retrieval costs can be significant"
+  - "Data must be identified and classified before archiving"
+companies: []

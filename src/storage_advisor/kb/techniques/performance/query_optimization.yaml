@@ -1,0 +1,36 @@
+schema_version: 2
+id: query_optimization
+name: Query Optimization
+category: performance
+summary: "Analyze and rewrite slow queries, optimize execution plans, and eliminate unnecessary operations."
+mechanism: "Profiles query execution plans (EXPLAIN ANALYZE), rewrites suboptimal SQL patterns, adjusts planner hints, and eliminates redundant sorts, scans, and joins."
+solves:
+  - HIGH_READ_LATENCY
+  - LARGE_TRANSACTIONAL_DATASET
+synergies_with:
+  - indexing
+  - schema_optimization
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Queries are already optimized"
+    reason: "Diminishing returns on well-tuned queries."
+  - condition: "Performance bottleneck is not in the database layer"
+    reason: "Query tuning cannot fix network, application, or storage I/O bottlenecks."
+applicable_when:
+  read_pressure: [MEDIUM, HIGH]
+implementation_complexity: medium
+impacts:
+  storage: 0
+  performance: 4
+  cost: 2
+  scalability: 2
+  security: 0
+benefits:
+  - "Often the highest-ROI performance improvement"
+  - "No additional infrastructure cost"
+  - "Reduces compute and I/O waste"
+disadvantages:
+  - "Requires query profiling expertise"
+  - "Benefits are workload-specific and not always predictable"
+companies: []

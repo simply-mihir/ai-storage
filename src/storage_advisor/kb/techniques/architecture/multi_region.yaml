@@ -1,0 +1,54 @@
+schema_version: 2
+id: multi_region
+name: Multi-Region Deployment
+category: architecture
+summary: "Deploy data and services across multiple geographic regions for disaster recovery and low-latency global access."
+mechanism: "Replicates data and compute across geographically separated regions with routing policies that direct traffic to the nearest or healthiest region."
+solves:
+  - DISASTER_RECOVERY_REQUIREMENT
+  - HIGH_AVAILABILITY_REQUIREMENT
+  - SCALABILITY_PRESSURE
+synergies_with:
+  - replication
+conflicts_with: []
+requires:
+  - replication
+avoid_when:
+  - condition: "All users are in a single geographic region"
+    reason: "Multi-region adds latency for cross-region replication without benefiting single-region users."
+applicable_when:
+  availability_class: [VERY_HIGH, MISSION_CRITICAL]
+  disaster_recovery_pressure: [HIGH]
+implementation_complexity: high
+impacts:
+  storage: -2
+  performance: 2
+  cost: -2
+  scalability: 4
+  security: 1
+benefits:
+  - "Survives full region outages with automated failover"
+  - "Reduces read latency for geographically distributed users"
+  - "Meets data residency and sovereignty requirements"
+disadvantages:
+  - "Significant infrastructure and operational cost"
+  - "Cross-region replication lag introduces consistency trade-offs"
+  - "Complex deployment, monitoring, and failover orchestration"
+companies: []
+variants:
+  - id: active_passive
+    name: Active-Passive
+    summary: "One region handles all writes; a standby region takes over on failure."
+    mechanism: "Asynchronous replication streams data to a passive region that promotes to primary during failover."
+    implementation_complexity: medium
+    impacts:
+      cost: -1
+      performance: 1
+  - id: active_active
+    name: Active-Active
+    summary: "Multiple regions serve reads and writes simultaneously with conflict resolution."
+    mechanism: "Bidirectional replication with last-writer-wins or application-level conflict resolution; every region accepts both reads and writes."
+    implementation_complexity: high
+    impacts:
+      cost: -2
+      performance: 3

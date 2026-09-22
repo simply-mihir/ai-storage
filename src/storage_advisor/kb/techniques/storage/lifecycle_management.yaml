@@ -1,0 +1,42 @@
+schema_version: 2
+id: lifecycle_management
+name: Lifecycle Management
+category: storage
+summary: "Automate data transitions between storage tiers and eventual deletion based on age or access patterns."
+mechanism: "Applies policy rules (age thresholds, access counts, retention schedules) to automatically transition objects between tiers and expire them at end-of-life."
+solves:
+  - HOT_COLD_DATA_MIX
+  - MODERATE_STORAGE_GROWTH
+  - HIGH_STORAGE_GROWTH
+  - EXTREME_STORAGE_GROWTH
+  - LONG_TERM_RETENTION
+synergies_with:
+  - tiered_storage
+  - archiving
+  - data_pruning
+conflicts_with: []
+requires:
+  - tiered_storage
+avoid_when:
+  - condition: "No clear data aging pattern exists"
+    reason: "Lifecycle rules require predictable access decay to be effective."
+  - condition: "All data must be retained at the same tier indefinitely"
+    reason: "No tier transitions to automate."
+applicable_when:
+  retention_class: [MEDIUM_TERM, LONG_TERM]
+  storage_growth: [MEDIUM, MODERATE, HIGH, EXTREME]
+implementation_complexity: medium
+impacts:
+  storage: 3
+  performance: 0
+  cost: 4
+  scalability: 3
+  security: 0
+benefits:
+  - "Automated cost optimization without manual intervention"
+  - "Ensures compliance with retention policies"
+  - "Reduces operational burden of data management"
+disadvantages:
+  - "Requires clear lifecycle rules and policies"
+  - "Misconfigured policies can delete data prematurely"
+companies: []

@@ -1,0 +1,39 @@
+schema_version: 2
+id: replication
+name: Replication
+category: database
+summary: "Maintain copies of data across multiple nodes or regions for availability and read scaling."
+mechanism: "Propagates write-ahead log (WAL) entries or change-data-capture events from a primary to one or more replicas, which apply changes synchronously or asynchronously."
+solves:
+  - HIGH_AVAILABILITY_REQUIREMENT
+  - DISASTER_RECOVERY_REQUIREMENT
+  - HIGH_READ_LATENCY
+  - SCALABILITY_PRESSURE
+synergies_with:
+  - sharding
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Single-node availability is acceptable"
+    reason: "Replication doubles infrastructure cost for unneeded redundancy."
+  - condition: "Budget cannot support multiple database instances"
+    reason: "Each replica requires compute, storage, and networking resources."
+applicable_when:
+  availability_class: [HIGH, VERY_HIGH, MISSION_CRITICAL]
+implementation_complexity: medium
+impacts:
+  storage: -2
+  performance: 3
+  cost: -2
+  scalability: 4
+  security: 0
+benefits:
+  - "Automatic failover for high availability"
+  - "Read scaling via read replicas"
+  - "Geographic distribution for lower latency"
+  - "Data protection against node failure"
+disadvantages:
+  - "Replication lag can cause stale reads"
+  - "Write throughput is limited by synchronous replication"
+  - "Additional infrastructure cost"
+companies: []

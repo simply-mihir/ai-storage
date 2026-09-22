@@ -1,0 +1,40 @@
+schema_version: 2
+id: deduplication
+name: Deduplication
+category: storage
+summary: "Eliminate redundant copies of data to reduce storage consumption."
+mechanism: "Computes content hashes (SHA-256, xxHash) for data blocks or objects and stores only unique entries; a reference-counted index maps duplicates to the canonical copy."
+solves:
+  - MODERATE_STORAGE_GROWTH
+  - HIGH_STORAGE_GROWTH
+  - EXTREME_STORAGE_GROWTH
+  - HOT_COLD_DATA_MIX
+synergies_with:
+  - compression
+  - chunking
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Data has very low redundancy (unique sensor readings, time-series)"
+    reason: "Hash computation cost with negligible storage savings."
+  - condition: "Startup team lacks operational capacity for dedup infrastructure"
+    reason: "Dedup index and garbage collection add operational burden."
+  - condition: "Budget does not support the additional compute"
+    reason: "Hash comparison and index maintenance are CPU and memory intensive."
+applicable_when:
+  storage_growth: [MEDIUM, MODERATE, HIGH, EXTREME]
+implementation_complexity: high
+impacts:
+  storage: 4
+  performance: 0
+  cost: 3
+  scalability: 2
+  security: 0
+benefits:
+  - "Significant storage reduction when duplicate data is common"
+  - "Reduces backup storage requirements"
+disadvantages:
+  - "Computational overhead for hash comparison"
+  - "Memory-intensive dedup index"
+  - "Risk of hash collision (extremely rare but not zero)"
+companies: []

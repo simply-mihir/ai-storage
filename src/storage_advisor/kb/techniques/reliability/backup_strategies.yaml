@@ -1,0 +1,51 @@
+schema_version: 2
+id: backup_strategies
+name: Backup Strategies
+category: reliability
+summary: "Protect data against loss through scheduled snapshots or continuous point-in-time recovery."
+mechanism: "Captures consistent data copies via filesystem or storage-level snapshots, or streams write-ahead log entries to a backup target for continuous point-in-time recovery."
+solves:
+  - DISASTER_RECOVERY_REQUIREMENT
+  - HIGH_AVAILABILITY_REQUIREMENT
+synergies_with:
+  - replication
+  - archiving
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Data is ephemeral and fully reproducible from upstream sources"
+    reason: "Backup cost is wasted when data can be regenerated cheaply."
+applicable_when:
+  disaster_recovery_pressure: [MEDIUM, HIGH]
+implementation_complexity: medium
+impacts:
+  storage: -2
+  performance: -1
+  cost: -2
+  scalability: 1
+  security: 2
+benefits:
+  - "Protects against accidental deletion, corruption, and ransomware"
+  - "Enables point-in-time recovery to any moment within retention window"
+  - "Satisfies compliance and audit requirements for data protection"
+disadvantages:
+  - "Consumes additional storage proportional to change rate and retention"
+  - "Snapshot-based backups may cause brief I/O pauses"
+  - "Restore testing is required but often neglected"
+companies: []
+variants:
+  - id: snapshots
+    name: Periodic Snapshots
+    summary: "Capture full or incremental point-in-time copies of data at scheduled intervals."
+    mechanism: "Uses copy-on-write or redirect-on-write at the storage layer to create a consistent image of the dataset at a specific moment."
+    implementation_complexity: low
+    impacts:
+      performance: 0
+  - id: continuous_backup_pitr
+    name: Continuous Backup (PITR)
+    summary: "Stream every write to a backup target for recovery to any point in time."
+    mechanism: "Continuously archives WAL segments or change-data-capture events; replay to an arbitrary timestamp reconstructs the database state at that moment."
+    implementation_complexity: high
+    impacts:
+      performance: -1
+      cost: -2

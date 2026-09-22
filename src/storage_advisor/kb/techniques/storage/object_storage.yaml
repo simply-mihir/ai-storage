@@ -1,0 +1,40 @@
+schema_version: 2
+id: object_storage
+name: Object Storage
+category: storage
+summary: "Store unstructured data (images, videos, documents) in a scalable object store rather than a relational database."
+mechanism: "Stores data as discrete objects with metadata and unique keys in a flat namespace; provides HTTP-based access, built-in replication, and erasure coding for durability."
+solves:
+  - LARGE_UNSTRUCTURED_OBJECT_WORKLOAD
+  - MODERATE_STORAGE_GROWTH
+  - HIGH_STORAGE_GROWTH
+  - EXTREME_STORAGE_GROWTH
+  - SCALABILITY_PRESSURE
+synergies_with:
+  - tiered_storage
+  - lifecycle_management
+  - chunking
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "All data is purely structured/transactional with no binary objects"
+    reason: "Object stores add complexity without benefit for relational data."
+applicable_when:
+  object_storage_pressure: [MEDIUM, HIGH]
+implementation_complexity: low
+impacts:
+  storage: 4
+  performance: 2
+  cost: 4
+  scalability: 4
+  security: 0
+benefits:
+  - "Near-infinite horizontal scalability"
+  - "Low cost per GB compared to block or database storage"
+  - "Built-in redundancy and durability"
+  - "Native lifecycle management support"
+disadvantages:
+  - "Higher latency than local/block storage for small objects"
+  - "Eventual consistency in some implementations"
+  - "Not suitable for transactional or relational queries"
+companies: []

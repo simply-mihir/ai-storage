@@ -1,0 +1,40 @@
+schema_version: 2
+id: chunking
+name: Chunking
+category: storage
+summary: "Split large files into smaller fixed-size or content-defined chunks for efficient storage and transfer."
+mechanism: "Divides large objects into blocks using fixed-size boundaries or content-defined chunking (Rabin fingerprinting); stores each chunk independently with a manifest for reassembly."
+solves:
+  - LARGE_UNSTRUCTURED_OBJECT_WORKLOAD
+  - MODERATE_STORAGE_GROWTH
+  - HIGH_STORAGE_GROWTH
+  - EXTREME_STORAGE_GROWTH
+synergies_with:
+  - deduplication
+  - object_storage
+conflicts_with: []
+requires:
+  - object_storage
+avoid_when:
+  - condition: "Files are small (under 10 MB)"
+    reason: "Chunk metadata overhead exceeds the benefit for small files."
+  - condition: "Simple object storage handles the workload adequately"
+    reason: "Chunking adds reassembly complexity without meaningful gain."
+applicable_when:
+  object_storage_pressure: [HIGH]
+  storage_growth: [MODERATE, HIGH, EXTREME]
+implementation_complexity: high
+impacts:
+  storage: 3
+  performance: 3
+  cost: 2
+  scalability: 3
+  security: 0
+benefits:
+  - "Enables deduplication at chunk level"
+  - "Improves upload/download parallelism"
+  - "Supports resumable transfers"
+disadvantages:
+  - "Adds metadata overhead for chunk tracking"
+  - "Reassembly complexity for reads"
+companies: []

@@ -1,0 +1,36 @@
+schema_version: 2
+id: data_aggregation
+name: Data Aggregation
+category: analytics
+summary: "Pre-aggregate raw data into summary tables for faster reporting and dashboards."
+mechanism: "Runs scheduled or incremental roll-up jobs that compute aggregates (counts, sums, averages) over raw data and writes results to summary tables consumed by dashboards."
+solves:
+  - HIGH_ANALYTICS_WORKLOAD
+  - HIGH_READ_LATENCY
+synergies_with:
+  - materialized_views
+  - columnar_storage
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Users need access to raw granular data"
+    reason: "Aggregation discards row-level detail that drill-down queries require."
+  - condition: "Query patterns are unpredictable"
+    reason: "Pre-aggregation is only effective for known query shapes."
+applicable_when:
+  analytics_pressure: [MEDIUM, HIGH]
+implementation_complexity: medium
+impacts:
+  storage: 2
+  performance: 4
+  cost: 3
+  scalability: 3
+  security: 0
+benefits:
+  - "Orders-of-magnitude faster dashboard queries"
+  - "Reduces compute cost for repeated reports"
+disadvantages:
+  - "Loss of granularity in aggregated data"
+  - "Aggregation pipeline needs maintenance"
+  - "Cannot answer ad-hoc queries on raw data"
+companies: []

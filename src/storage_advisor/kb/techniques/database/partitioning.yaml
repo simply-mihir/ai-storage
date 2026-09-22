@@ -1,0 +1,39 @@
+schema_version: 2
+id: partitioning
+name: Partitioning
+category: database
+summary: "Divide large tables into smaller partitions based on a key (date, region, ID range) to improve query performance and manageability."
+mechanism: "Splits a table into disjoint physical segments by a partition key; the query planner prunes irrelevant partitions at query time, reducing scan scope."
+solves:
+  - LARGE_TRANSACTIONAL_DATASET
+  - HIGH_WRITE_PRESSURE
+  - HIGH_READ_LATENCY
+synergies_with:
+  - indexing
+  - sharding
+  - data_pruning
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Dataset is small (under 10 GB)"
+    reason: "Partition overhead exceeds benefit on small tables."
+  - condition: "Queries rarely filter on the partition key"
+    reason: "Without pruning, partitioning adds metadata cost with no speedup."
+applicable_when:
+  write_pressure: [MEDIUM, HIGH]
+implementation_complexity: medium
+impacts:
+  storage: 0
+  performance: 4
+  cost: 2
+  scalability: 4
+  security: 0
+benefits:
+  - "Dramatically faster queries that match the partition key"
+  - "Easier maintenance (drop/archive individual partitions)"
+  - "Improved write throughput via partition-level locking"
+disadvantages:
+  - "Cross-partition queries can be slower"
+  - "Requires careful partition key selection"
+  - "Schema changes can be more complex"
+companies: []

@@ -1,0 +1,45 @@
+schema_version: 2
+id: sharding
+name: Sharding
+category: database
+summary: "Distribute data across multiple database instances based on a shard key for horizontal scaling."
+mechanism: "Applies a deterministic routing function (hash, range, or directory) to a shard key so each row lands on exactly one shard; application-level or proxy routing directs queries to the correct instance."
+solves:
+  - SCALABILITY_PRESSURE
+  - LARGE_TRANSACTIONAL_DATASET
+  - HIGH_WRITE_PRESSURE
+  - HIGH_STORAGE_GROWTH
+  - EXTREME_STORAGE_GROWTH
+synergies_with:
+  - partitioning
+  - replication
+conflicts_with: []
+requires:
+  - partitioning
+avoid_when:
+  - condition: "Single database can handle the load"
+    reason: "Sharding adds massive operational complexity that is unjustified at smaller scale."
+  - condition: "Team lacks experience with distributed databases"
+    reason: "Mismanaged sharding causes data loss, hotspots, and rebalancing incidents."
+  - condition: "Cross-shard joins are frequently needed"
+    reason: "Cross-shard queries require scatter-gather and negate throughput gains."
+applicable_when:
+  scalability_pressure: [HIGH]
+  write_pressure: [HIGH]
+  storage_growth: [HIGH, EXTREME]
+implementation_complexity: high
+impacts:
+  storage: 0
+  performance: 4
+  cost: -2
+  scalability: 4
+  security: 0
+benefits:
+  - "Near-linear write throughput scaling"
+  - "Each shard handles a fraction of total load"
+disadvantages:
+  - "Significant operational complexity"
+  - "Cross-shard queries are expensive or impossible"
+  - "Rebalancing shards is disruptive"
+  - "Application-level routing required"
+companies: []

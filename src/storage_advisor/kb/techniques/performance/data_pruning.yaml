@@ -1,0 +1,41 @@
+schema_version: 2
+id: data_pruning
+name: Data Pruning
+category: performance
+summary: "Remove or archive obsolete, expired, or irrelevant data to reduce dataset size."
+mechanism: "Applies retention rules or access-recency filters to identify and delete rows, partitions, or objects that have outlived their useful life."
+solves:
+  - MODERATE_STORAGE_GROWTH
+  - HIGH_STORAGE_GROWTH
+  - EXTREME_STORAGE_GROWTH
+  - HOT_COLD_DATA_MIX
+  - LARGE_TRANSACTIONAL_DATASET
+synergies_with:
+  - lifecycle_management
+  - tiered_storage
+  - partitioning
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Regulatory requirements forbid deletion"
+    reason: "Pruning violates mandated retention periods."
+  - condition: "All data has ongoing business value"
+    reason: "No safe candidates for removal."
+applicable_when:
+  storage_growth: [MEDIUM, MODERATE, HIGH, EXTREME]
+  retention_class: [MEDIUM_TERM, LONG_TERM]
+implementation_complexity: low
+impacts:
+  storage: 4
+  performance: 3
+  cost: 4
+  scalability: 3
+  security: 0
+benefits:
+  - "Reduces storage costs directly"
+  - "Improves query performance on smaller datasets"
+  - "Simplifies backup and restore"
+disadvantages:
+  - "Risk of premature data deletion"
+  - "Requires clear retention and pruning policies"
+companies: []

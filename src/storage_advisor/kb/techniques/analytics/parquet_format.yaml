@@ -1,0 +1,40 @@
+schema_version: 2
+id: parquet_format
+name: Parquet Format
+category: analytics
+summary: "Use Apache Parquet columnar file format for efficient analytical data storage and processing."
+mechanism: "Encodes data in a columnar layout with row-group partitioning, dictionary and run-length encoding, and embedded statistics for predicate pushdown; supports schema evolution via self-describing metadata."
+solves:
+  - HIGH_ANALYTICS_WORKLOAD
+  - MODERATE_STORAGE_GROWTH
+  - HIGH_STORAGE_GROWTH
+  - EXTREME_STORAGE_GROWTH
+synergies_with:
+  - columnar_storage
+  - data_aggregation
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Data requires frequent row-level updates"
+    reason: "Parquet is write-once, read-many; in-place updates are not supported."
+  - condition: "No analytical workload exists"
+    reason: "Parquet's columnar advantages are wasted on purely transactional access."
+applicable_when:
+  analytics_pressure: [MEDIUM, HIGH]
+implementation_complexity: low
+impacts:
+  storage: 4
+  performance: 3
+  cost: 3
+  scalability: 4
+  security: 0
+benefits:
+  - "Excellent compression (often 5-10x vs CSV/JSON)"
+  - "Column pruning for efficient analytical queries"
+  - "Schema evolution support"
+  - "Broad ecosystem support (Spark, DuckDB, Pandas, Athena)"
+disadvantages:
+  - "Not suitable for low-latency point queries"
+  - "Write-once, read-many pattern (no in-place updates)"
+  - "Requires tooling that supports the format"
+companies: []

@@ -369,14 +369,14 @@ class TestFlatView:
         view = flat_view([family])
         assert view[0]["not_recommended_when"] == ["cond1", "cond2"]
 
-    def test_pilot_families_produce_correct_count(self):
+    def test_all_families_produce_correct_count(self):
         kb_root = (
             Path(__file__).resolve().parent.parent.parent
             / "src" / "storage_advisor" / "kb" / "techniques"
         )
         families = discover_families(kb_root)
         view = flat_view(families)
-        assert len(view) == 6
+        assert len(view) == 27
 
 
 # ---------------------------------------------------------------------------
@@ -416,7 +416,7 @@ class TestSchemaVersion:
 # ---------------------------------------------------------------------------
 
 class TestDiscoverFamilies:
-    def test_discovers_pilot_families(self):
+    def test_discovers_all_families(self):
         kb_root = (
             Path(__file__).resolve().parent.parent.parent
             / "src" / "storage_advisor" / "kb" / "techniques"
@@ -425,9 +425,13 @@ class TestDiscoverFamilies:
         ids = {f.id for f in families}
         assert "compression" in ids
         assert "caching" in ids
-        assert len(families) == 2
+        assert "deduplication" in ids
+        assert "partitioning" in ids
+        assert "backup_strategies" in ids
+        assert "multi_region" in ids
+        assert len(families) == 21
 
-    def test_flatten_pilot_families(self):
+    def test_flatten_all_families(self):
         kb_root = (
             Path(__file__).resolve().parent.parent.parent
             / "src" / "storage_advisor" / "kb" / "techniques"
@@ -435,12 +439,12 @@ class TestDiscoverFamilies:
         techs = flatten(kb_root=kb_root)
         ids = {t.id for t in techs}
         assert "compression.lossless" in ids
-        assert "compression.lossy" in ids
-        assert "compression.adaptive" in ids
-        assert "compression.delta" in ids
         assert "caching.read_cache" in ids
-        assert "caching.write_behind" in ids
-        assert len(techs) == 6
+        assert "deduplication" in ids
+        assert "partitioning" in ids
+        assert "backup_strategies.snapshots" in ids
+        assert "multi_region.active_active" in ids
+        assert len(techs) == 27
 
 
 # ---------------------------------------------------------------------------
@@ -671,7 +675,7 @@ class TestDeterminism:
         ids_2 = [t.id for t in flatten([fam_a, fam_b])]
         assert ids_1 == ids_2
 
-    def test_pilot_order_matches_sorted_paths(self):
+    def test_full_kb_order_matches_sorted_paths(self):
         kb_root = (
             Path(__file__).resolve().parent.parent.parent
             / "src" / "storage_advisor" / "kb" / "techniques"
@@ -679,12 +683,25 @@ class TestDeterminism:
         techs = flatten(kb_root=kb_root)
         ids = [t.id for t in techs]
         expected = [
-            "caching.read_cache",
-            "caching.write_behind",
-            "compression.lossless",
-            "compression.lossy",
-            "compression.adaptive",
-            "compression.delta",
+            # analytics/
+            "columnar_storage", "data_aggregation", "parquet_format",
+            # architecture/
+            "multi_region.active_passive", "multi_region.active_active",
+            # database/
+            "indexing", "partitioning", "replication",
+            "schema_optimization", "sharding",
+            # performance/
+            "caching.read_cache", "caching.write_behind",
+            "data_pruning", "materialized_views", "query_optimization",
+            # reliability/
+            "backup_strategies.snapshots",
+            "backup_strategies.continuous_backup_pitr",
+            # storage/
+            "archiving", "chunking",
+            "compression.lossless", "compression.lossy",
+            "compression.adaptive", "compression.delta",
+            "deduplication", "lifecycle_management",
+            "object_storage", "tiered_storage",
         ]
         assert ids == expected
 

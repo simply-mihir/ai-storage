@@ -1,0 +1,37 @@
+schema_version: 2
+id: indexing
+name: Indexing
+category: database
+summary: "Create database indexes to accelerate read queries on frequently accessed columns."
+mechanism: "Builds B-tree, hash, or GIN/GiST auxiliary structures that map column values to row locations, enabling O(log n) lookups instead of full table scans."
+solves:
+  - HIGH_READ_LATENCY
+  - LARGE_TRANSACTIONAL_DATASET
+synergies_with:
+  - partitioning
+  - query_optimization
+  - schema_optimization
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Write-heavy workload where every millisecond of write latency matters"
+    reason: "Index maintenance on every write adds measurable overhead."
+  - condition: "Queries are analytical scans rather than point lookups"
+    reason: "Full scans bypass indexes; columnar storage is a better fit."
+applicable_when:
+  read_pressure: [MEDIUM, HIGH]
+implementation_complexity: low
+impacts:
+  storage: -1
+  performance: 4
+  cost: 0
+  scalability: 3
+  security: 0
+benefits:
+  - "Orders-of-magnitude faster lookups on indexed columns"
+  - "Supports efficient sorting and filtering"
+disadvantages:
+  - "Increases write latency (index maintenance on every write)"
+  - "Additional storage for index structures"
+  - "Over-indexing degrades write performance"
+companies: []

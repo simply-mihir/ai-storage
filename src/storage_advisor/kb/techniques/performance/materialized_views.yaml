@@ -1,0 +1,39 @@
+schema_version: 2
+id: materialized_views
+name: Materialized Views
+category: performance
+summary: "Pre-compute and store query results for expensive aggregations or joins."
+mechanism: "Executes a defining query and persists its result set as a physical table; a refresh policy (periodic, on-demand, or incremental) keeps the materialized data current."
+solves:
+  - HIGH_READ_LATENCY
+  - HIGH_ANALYTICS_WORKLOAD
+synergies_with:
+  - data_aggregation
+  - columnar_storage
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Underlying data changes every second and views must be fresh"
+    reason: "Refresh overhead negates pre-computation savings on rapidly changing data."
+  - condition: "Query patterns are unpredictable (ad-hoc exploration)"
+    reason: "Materialized views help known queries; ad-hoc queries miss the pre-computed paths."
+applicable_when:
+  read_pressure: [MEDIUM, HIGH]
+  analytics_pressure: [MEDIUM, HIGH]
+implementation_complexity: medium
+impacts:
+  storage: -1
+  performance: 4
+  cost: -1
+  scalability: 3
+  security: 0
+benefits:
+  - "Eliminates repeated expensive computation"
+  - "Provides near-instant response for pre-computed queries"
+disadvantages:
+  - "Storage overhead for materialized data"
+  - "Refresh strategy needed (stale vs fresh trade-off)"
+  - "Not suitable for highly dynamic data"
+companies:
+  - name: Google
+    context: "BigQuery auto-refreshing materialized views for pre-aggregated dashboards."

@@ -1,0 +1,36 @@
+schema_version: 2
+id: schema_optimization
+name: Schema Optimization
+category: database
+summary: "Redesign database schema for query efficiency: normalize or denormalize based on workload patterns."
+mechanism: "Analyzes query access patterns and restructures tables — denormalizing hot read paths to eliminate joins, or normalizing write-heavy paths to reduce update anomalies."
+solves:
+  - LARGE_TRANSACTIONAL_DATASET
+  - HIGH_READ_LATENCY
+synergies_with:
+  - indexing
+  - query_optimization
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Schema is simple and queries already perform well"
+    reason: "Restructuring a performant schema risks introducing regressions."
+  - condition: "Workload is purely write-heavy with minimal reads"
+    reason: "Denormalization helps reads; for writes, normalization is already optimal."
+applicable_when:
+  read_pressure: [MEDIUM, HIGH]
+implementation_complexity: medium
+impacts:
+  storage: 2
+  performance: 3
+  cost: 0
+  scalability: 2
+  security: 0
+benefits:
+  - "Reduces unnecessary joins"
+  - "Improves query planning efficiency"
+  - "Can eliminate redundant data"
+disadvantages:
+  - "Denormalization introduces update anomalies"
+  - "Requires deep understanding of query patterns"
+companies: []

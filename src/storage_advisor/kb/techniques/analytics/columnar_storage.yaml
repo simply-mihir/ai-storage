@@ -1,0 +1,38 @@
+schema_version: 2
+id: columnar_storage
+name: Columnar Storage
+category: analytics
+summary: "Store data in column-oriented format for efficient analytical queries that scan specific columns."
+mechanism: "Organizes data by column rather than row; each column is stored contiguously on disk, enabling vectorized reads, better compression ratios, and column pruning at scan time."
+solves:
+  - HIGH_ANALYTICS_WORKLOAD
+  - HIGH_READ_LATENCY
+synergies_with:
+  - data_aggregation
+  - parquet_format
+  - materialized_views
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "Workload is purely transactional with no analytics"
+    reason: "Row-oriented storage is faster for OLTP point lookups and row-level writes."
+  - condition: "Queries always fetch full rows"
+    reason: "Column pruning provides no benefit when every column is read."
+applicable_when:
+  analytics_pressure: [MEDIUM, HIGH]
+implementation_complexity: medium
+impacts:
+  storage: 3
+  performance: 4
+  cost: 3
+  scalability: 4
+  security: 0
+benefits:
+  - "10-100x faster analytical queries vs row-oriented storage"
+  - "Excellent compression for columnar data"
+  - "Reduces I/O by reading only needed columns"
+disadvantages:
+  - "Poor performance for single-row lookups"
+  - "Write amplification for row-level updates"
+  - "Not suitable for OLTP workloads"
+companies: []

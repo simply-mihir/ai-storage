@@ -1,0 +1,41 @@
+schema_version: 2
+id: tiered_storage
+name: Tiered Storage
+category: storage
+summary: "Separate data across hot, warm, and cold storage tiers based on access frequency."
+mechanism: "Classifies data by access recency and frequency, then moves it between storage tiers (SSD, HDD, object store) via automated or policy-driven migration."
+solves:
+  - HOT_COLD_DATA_MIX
+  - MODERATE_STORAGE_GROWTH
+  - HIGH_STORAGE_GROWTH
+  - EXTREME_STORAGE_GROWTH
+  - LONG_TERM_RETENTION
+synergies_with:
+  - lifecycle_management
+  - archiving
+  - data_pruning
+conflicts_with: []
+requires: []
+avoid_when:
+  - condition: "All data is accessed uniformly with no clear hot/cold boundary"
+    reason: "Tiering adds complexity without cost benefit when access is uniform."
+  - condition: "Retention is very short (under 6 months)"
+    reason: "Data never ages enough to justify cold-tier migration."
+applicable_when:
+  retention_class: [MEDIUM_TERM, LONG_TERM]
+  storage_growth: [MEDIUM, MODERATE, HIGH, EXTREME]
+implementation_complexity: medium
+impacts:
+  storage: 3
+  performance: 2
+  cost: 4
+  scalability: 3
+  security: 0
+benefits:
+  - "Significant cost reduction by moving cold data to cheaper storage"
+  - "Maintains fast access for frequently used data"
+disadvantages:
+  - "Requires data lifecycle classification logic"
+  - "Retrieval from cold tiers may have higher latency"
+  - "Migration policies need monitoring and tuning"
+companies: []
