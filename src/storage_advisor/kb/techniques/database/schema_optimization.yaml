@@ -10,7 +10,8 @@ solves:
 synergies_with:
   - indexing
   - query_optimization
-conflicts_with: []
+conflicts_with:
+  - sharding
 requires: []
 avoid_when:
   - condition: "Schema is simple and queries already perform well"

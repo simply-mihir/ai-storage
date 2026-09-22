@@ -18,6 +18,9 @@ applicable_when:
   storage_growth: [MEDIUM, MODERATE, HIGH, EXTREME]
 synergies_with:
   - caching
+  - compaction
+  - deduplication
+  - file_format_optimization
 conflicts_with: []
 requires: []
 avoid_when:
@@ -86,6 +89,9 @@ variants:
     applicable_when:
       storage_growth: [HIGH, EXTREME]
       data_type: [MEDIA, TELEMETRY]
+    conflicts_with:
+      - caching.write_behind
+      - masking
     impacts:
       storage: 5
       performance: 0
@@ -147,8 +153,6 @@ variants:
       Computes binary or semantic diffs between consecutive records/versions
       and stores only the delta. Reconstruction replays deltas from a
       periodic full snapshot.
-    synergies_with:
-      - caching.read_cache
     impacts:
       storage: 5
       performance: -1

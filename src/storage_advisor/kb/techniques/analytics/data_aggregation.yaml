@@ -10,6 +10,8 @@ solves:
 synergies_with:
   - materialized_views
   - columnar_storage
+  - file_format_optimization
+  - parquet_format
 conflicts_with: []
 requires: []
 avoid_when:

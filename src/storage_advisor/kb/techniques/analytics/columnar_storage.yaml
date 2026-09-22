@@ -11,6 +11,8 @@ synergies_with:
   - data_aggregation
   - parquet_format
   - materialized_views
+  - bloom_filters
+  - file_format_optimization
 conflicts_with: []
 requires: []
 avoid_when:

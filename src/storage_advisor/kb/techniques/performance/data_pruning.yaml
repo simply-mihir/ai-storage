@@ -14,7 +14,8 @@ synergies_with:
   - lifecycle_management
   - tiered_storage
   - partitioning
-conflicts_with: []
+conflicts_with:
+  - archiving
 requires: []
 avoid_when:
   - condition: "Regulatory requirements forbid deletion"

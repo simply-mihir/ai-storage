@@ -10,6 +10,7 @@ solves:
 synergies_with:
   - replication
   - archiving
+  - masking
 conflicts_with: []
 requires: []
 avoid_when:

@@ -13,7 +13,8 @@ solves:
 synergies_with:
   - partitioning
   - replication
-conflicts_with: []
+conflicts_with:
+  - schema_optimization
 requires:
   - partitioning
 avoid_when:

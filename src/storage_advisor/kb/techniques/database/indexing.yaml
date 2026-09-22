@@ -11,6 +11,7 @@ synergies_with:
   - partitioning
   - query_optimization
   - schema_optimization
+  - bloom_filters
 conflicts_with: []
 requires: []
 avoid_when:

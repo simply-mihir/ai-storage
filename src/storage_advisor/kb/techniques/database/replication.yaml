@@ -11,6 +11,9 @@ solves:
   - SCALABILITY_PRESSURE
 synergies_with:
   - sharding
+  - backup_strategies
+  - encryption
+  - multi_region
 conflicts_with: []
 requires: []
 avoid_when:

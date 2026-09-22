@@ -13,7 +13,10 @@ solves:
 synergies_with:
   - lifecycle_management
   - tiered_storage
-conflicts_with: []
+  - backup_strategies
+  - encryption
+conflicts_with:
+  - data_pruning
 requires: []
 avoid_when:
   - condition: "All data needs to be accessible with low latency"

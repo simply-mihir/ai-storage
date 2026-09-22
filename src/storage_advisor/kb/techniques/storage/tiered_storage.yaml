@@ -14,6 +14,8 @@ synergies_with:
   - lifecycle_management
   - archiving
   - data_pruning
+  - compaction
+  - object_storage
 conflicts_with: []
 requires: []
 avoid_when:

@@ -14,6 +14,7 @@ synergies_with:
   - tiered_storage
   - archiving
   - data_pruning
+  - object_storage
 conflicts_with: []
 requires:
   - tiered_storage

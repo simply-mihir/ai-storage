@@ -9,7 +9,8 @@ solves:
   - COMPLIANCE_REQUIREMENT
 synergies_with:
   - encryption
-conflicts_with: []
+conflicts_with:
+  - compression.lossy
 requires: []
 avoid_when:
   - condition: "All users are fully authorized to see raw data"
