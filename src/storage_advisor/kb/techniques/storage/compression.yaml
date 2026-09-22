@@ -88,7 +88,6 @@ variants:
       information below a configurable quality threshold. Ratios 10:1 to 100:1.
     applicable_when:
       storage_growth: [HIGH, EXTREME]
-      data_type: [MEDIA, TELEMETRY]
     conflicts_with:
       - caching.write_behind
       - masking

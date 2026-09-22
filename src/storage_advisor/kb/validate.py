@@ -15,8 +15,23 @@ from pathlib import Path
 import networkx as nx
 
 from storage_advisor.domain.problems import ProblemId
+from storage_advisor.kb.compat import V2_TO_LEGACY_CATEGORY
 from storage_advisor.kb.loader import discover_families, flatten
-from storage_advisor.kb.schema import Family
+from storage_advisor.kb.schema import Family, FamilyCategory
+
+PREDICATE_VOCABULARY: frozenset[str] = frozenset({
+    "storage_growth",
+    "read_pressure",
+    "write_pressure",
+    "latency_class",
+    "retention_class",
+    "object_storage_pressure",
+    "analytics_pressure",
+    "scalability_pressure",
+    "availability_class",
+    "compliance_pressure",
+    "disaster_recovery_pressure",
+})
 
 
 class KBIntegrityError(Exception):
@@ -150,6 +165,40 @@ def validate_kb(
             if tech.id in getattr(tech, rel):
                 violations.append(
                     f"[{tech.id}] self-reference in {rel}"
+                )
+
+    # ── predicate vocabulary guard ──
+    valid_categories = {c.value for c in FamilyCategory}
+    for fam in families:
+        for key in fam.applicable_when:
+            if key not in PREDICATE_VOCABULARY:
+                violations.append(
+                    f"[{fam.id}] applicable_when key '{key}' is not in "
+                    f"the predicate vocabulary"
+                )
+        for v in fam.variants:
+            if v.applicable_when:
+                for key in v.applicable_when:
+                    if key not in PREDICATE_VOCABULARY:
+                        violations.append(
+                            f"[{fam.id}.{v.id}] applicable_when key '{key}' "
+                            f"is not in the predicate vocabulary"
+                        )
+
+        # ── category guard ──
+        if fam.category not in valid_categories:
+            violations.append(
+                f"[{fam.id}] category '{fam.category}' is not a valid "
+                f"FamilyCategory"
+            )
+
+        # ── engine_exposure legacy-category mapping guard ──
+        if fam.engine_exposure == "legacy":
+            cat = fam.legacy_category or fam.category
+            if cat not in V2_TO_LEGACY_CATEGORY:
+                violations.append(
+                    f"[{fam.id}] engine_exposure='legacy' but category "
+                    f"'{cat}' has no V2_TO_LEGACY_CATEGORY mapping"
                 )
 
     # ── REQUIRES cycle detection ──
