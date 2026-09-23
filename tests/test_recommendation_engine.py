@@ -7,24 +7,26 @@ from storage_advisor.domain.recommendations import Priority
 from storage_advisor.domain.scenario import Scenario
 from storage_advisor.estimation.impact_estimator import estimate_impact
 from storage_advisor.knowledge.technique_catalog import load_techniques
-from storage_advisor.recommendation.recommendation_engine import run_recommendation_engine
+from storage_advisor.recommendation.recommendation_engine import (
+    run_recommendation_engine,
+)
 
 
 def _scenario(**overrides) -> Scenario:
-    defaults = dict(
-        business_domain="AI", company_size="STARTUP",
-        expected_users=1000, concurrent_users=100,
-        current_storage_gb=100.0, daily_growth_gb=1.0,
-        data_types=["TEXT"],
-        structured_data_pct=100.0, semi_structured_data_pct=0.0, unstructured_data_pct=0.0,
-        read_intensity="LOW", write_intensity="LOW", access_pattern="MIXED",
-        latency_requirement_ms=1000.0, availability_requirement=95.0,
-        rto_minutes=480.0, rpo_minutes=240.0,
-        retention_years=0.5, budget_level="MEDIUM",
-        analytics_required=False, real_time_processing_required=False,
-        sensitive_data=False, encryption_required=False,
-        compliance_requirements=["NONE"],
-    )
+    defaults = {
+        "business_domain": "AI", "company_size": "STARTUP",
+        "expected_users": 1000, "concurrent_users": 100,
+        "current_storage_gb": 100.0, "daily_growth_gb": 1.0,
+        "data_types": ["TEXT"],
+        "structured_data_pct": 100.0, "semi_structured_data_pct": 0.0, "unstructured_data_pct": 0.0,
+        "read_intensity": "LOW", "write_intensity": "LOW", "access_pattern": "MIXED",
+        "latency_requirement_ms": 1000.0, "availability_requirement": 95.0,
+        "rto_minutes": 480.0, "rpo_minutes": 240.0,
+        "retention_years": 0.5, "budget_level": "MEDIUM",
+        "analytics_required": False, "real_time_processing_required": False,
+        "sensitive_data": False, "encryption_required": False,
+        "compliance_requirements": ["NONE"],
+    }
     defaults.update(overrides)
     return Scenario(**defaults)
 
@@ -217,10 +219,9 @@ class TestImpactEstimation:
 class TestGrowthLevelShardingBehavior:
     """Verify the three-tier growth classification drives sharding priority."""
 
-    def _demo(self, daily_growth_gb: float) -> "RecommendationResult":
-        from storage_advisor.domain.problems import ProblemId
-        from storage_advisor.profiling.workload_profiler import profile_workload
+    def _demo(self, daily_growth_gb: float):
         from storage_advisor.detection.problem_detector import detect_problems
+        from storage_advisor.profiling.workload_profiler import profile_workload
         s = _scenario(
             expected_users=10_000_000, concurrent_users=100_000,
             current_storage_gb=25_000, daily_growth_gb=daily_growth_gb,
@@ -238,8 +239,7 @@ class TestGrowthLevelShardingBehavior:
         return s, profile, problem_ids, result
 
     def test_300gb_triggers_moderate_growth_sharding_recommended(self):
-        s, profile, problem_ids, result = self._demo(300)
-        from storage_advisor.domain.problems import ProblemId
+        _s, profile, problem_ids, result = self._demo(300)
         from storage_advisor.profiling.workload_profiler import GrowthClass
         assert profile.storage_growth == GrowthClass.MODERATE
         assert ProblemId.MODERATE_STORAGE_GROWTH in problem_ids
@@ -251,8 +251,7 @@ class TestGrowthLevelShardingBehavior:
         assert sharding.priority == Priority.OPTIONAL
 
     def test_1000gb_triggers_high_growth_sharding_required(self):
-        s, profile, problem_ids, result = self._demo(1000)
-        from storage_advisor.domain.problems import ProblemId
+        _s, profile, problem_ids, result = self._demo(1000)
         from storage_advisor.profiling.workload_profiler import GrowthClass
         assert profile.storage_growth == GrowthClass.HIGH
         assert ProblemId.HIGH_STORAGE_GROWTH in problem_ids
@@ -265,8 +264,7 @@ class TestGrowthLevelShardingBehavior:
 
     def test_3000gb_triggers_extreme_growth_sharding_required_higher_score(self):
         _, _, _, result_1000 = self._demo(1000)
-        s, profile, problem_ids, result_3000 = self._demo(3000)
-        from storage_advisor.domain.problems import ProblemId
+        _s, profile, problem_ids, result_3000 = self._demo(3000)
         from storage_advisor.profiling.workload_profiler import GrowthClass
         assert profile.storage_growth == GrowthClass.EXTREME
         assert ProblemId.EXTREME_STORAGE_GROWTH in problem_ids
