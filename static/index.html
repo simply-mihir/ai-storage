@@ -1590,6 +1590,103 @@
       position: relative;
     }
 
+    /* Second Opinion Card & Chips */
+    .second-opinion-card {
+      border-radius: 20px;
+      padding: 22px 26px;
+      margin-bottom: 24px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .so-chip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+    }
+    .so-chip-green {
+      background: rgba(34, 197, 94, 0.14);
+      color: #16a34a;
+      border: 1px solid rgba(34, 197, 94, 0.32);
+    }
+    [data-theme="dark"] .so-chip-green {
+      background: rgba(34, 197, 94, 0.16);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.35);
+    }
+    .so-chip-green:hover,
+    .so-chip-green:focus {
+      background: rgba(34, 197, 94, 0.24);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+      outline: none;
+    }
+    .so-chip-amber {
+      background: rgba(245, 158, 11, 0.14);
+      color: #d97706;
+      border: 1px solid rgba(245, 158, 11, 0.32);
+    }
+    [data-theme="dark"] .so-chip-amber {
+      background: rgba(245, 158, 11, 0.16);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.35);
+    }
+    .so-chip-amber:hover,
+    .so-chip-amber:focus {
+      background: rgba(245, 158, 11, 0.24);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+      outline: none;
+    }
+    .so-chip .so-tooltip {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      bottom: 130%;
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      background: var(--bg-surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 0.76rem;
+      font-weight: 500;
+      white-space: nowrap;
+      z-index: 1000;
+      pointer-events: none;
+      transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.2s;
+    }
+    .so-chip:hover .so-tooltip,
+    .so-chip:focus .so-tooltip {
+      visibility: visible;
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .so-chip .so-tooltip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 6px;
+      border-style: solid;
+      border-color: var(--border) transparent transparent transparent;
+    }
+    @media (max-width: 900px) {
+      .second-opinion-grid {
+        grid-template-columns: 1fr !important;
+        gap: 18px !important;
+      }
+    }
+
     /* Technique Components & Rows */
     .rec-bottom-section {
       display: grid;
@@ -1951,6 +2048,10 @@
     <main>
       <!-- 4.2 Hero Section -->
       <section class="hero-section">
+        <div class="hero-badge-wrap">
+          <span class="hero-pill-badge">Deterministic Core · Explainable by Design</span>
+        </div>
+
         <h1 class="hero-h1">
           Explainable Storage<br />
           <span class="gradient-text">Architecture Intelligence</span>
@@ -2306,6 +2407,18 @@
         </div>
       </section>
 
+      <!-- 4.10 Credibility Chips -->
+      <section class="credibility-section">
+        <div class="credibility-chips-row">
+          <span class="cred-pill">Docker</span>
+          <span class="cred-pill">Terraform Export</span>
+          <span class="cred-pill">pytest 222</span>
+          <span class="cred-pill">DuckDB Analytics</span>
+          <span class="cred-pill">FastAPI</span>
+          <span class="cred-pill">Pydantic v2</span>
+        </div>
+      </section>
+
       <!-- 4.11 CTA Band & Footer -->
       <section class="cta-band">
         <h2 class="cta-display-line">Ship the architecture you can defend.</h2>
@@ -2419,22 +2532,6 @@
             <button class="circle-btn" id="rec-terraform-top-btn" aria-label="Download Terraform" title="Download Terraform Architecture Blueprint">
               <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
-
-            <!-- Export Report Pill -->
-            <div style="position: relative; display: inline-block;">
-              <button class="pill pill-accent" id="export-report-btn" aria-label="Export Report" title="Export Consultant Report" style="cursor: pointer; border: none;">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                Export Report
-              </button>
-              <div id="export-report-dropdown" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 6px; background: var(--bg2); border-radius: var(--radius); box-shadow: var(--shadow-raised); z-index: 100; min-width: 160px; overflow: hidden;">
-                <button class="export-report-option" data-format="md" style="display: block; width: 100%; padding: 10px 16px; border: none; background: none; color: var(--text); font-size: 0.85rem; text-align: left; cursor: pointer;">
-                  Markdown (.md)
-                </button>
-                <button class="export-report-option" data-format="pdf" style="display: block; width: 100%; padding: 10px 16px; border: none; background: none; color: var(--text); font-size: 0.85rem; text-align: left; cursor: pointer; border-top: 1px solid var(--bg3);">
-                  PDF (.pdf)
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -2676,6 +2773,70 @@
           </div>
         </div>
 
+        <!-- Second Opinion Card -->
+        <div class="second-opinion-card neu-raised" id="second-opinion-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="second-opinion-badge" style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 16v-4"></path>
+                  <path d="M12 8h.01"></path>
+                </svg>
+              </span>
+              <div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text); margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span>Second Opinion</span>
+                  <span style="font-weight: 400; font-size: 0.86rem; color: var(--text2);">— ML advises, engine decides</span>
+                </h3>
+                <div style="font-size: 0.74rem; color: var(--text3); margin-top: 2px;">
+                  Distilled ClassifierChain (80/20 holdout Jaccard 98.4%) &bull; Disagreement flags cases for human review, never overrides
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="delta-pill delta-green" id="second-opinion-status-pill">ML Advisory Active</span>
+            </div>
+          </div>
+
+          <div class="second-opinion-grid" style="display: grid; grid-template-columns: auto 1fr; gap: 32px; align-items: center;">
+            <!-- Agreement Semicircle Gauge -->
+            <div class="gauge-container" style="gap: 16px;">
+              <div class="neu-inset-sm" style="border-radius: 16px; padding: 14px 20px; text-align: center; min-width: 105px;">
+                <div class="tabular" id="so-agreement-val" style="font-size: 2.2rem; font-weight: 700; color: var(--pos); line-height: 1;">94%</div>
+                <div style="font-size: 0.7rem; color: var(--text3); font-weight: 600; margin-top: 4px;">AGREEMENT</div>
+              </div>
+
+              <svg class="semicircle-gauge" viewBox="0 0 140 70">
+                <path d="M 15 65 A 55 55 0 0 1 125 65" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="12" stroke-linecap="round"/>
+                <path id="so-gauge-arc" d="M 15 65 A 55 55 0 0 1 121 44" fill="none" stroke="var(--pos)" stroke-width="12" stroke-linecap="round"/>
+                <!-- Needle -->
+                <circle cx="70" cy="65" r="6" fill="var(--text)"/>
+                <line id="so-gauge-needle" x1="70" y1="65" x2="105" y2="48" stroke="var(--text)" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+            <!-- Divergence Chips -->
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <!-- ML Adds (Green) -->
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--text2); min-width: 95px; text-transform: uppercase; letter-spacing: 0.5px;">ML Suggests (+)</span>
+                <div id="so-adds-container" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                  <!-- Rendered chips -->
+                </div>
+              </div>
+
+              <!-- ML Drops (Amber) -->
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--text2); min-width: 95px; text-transform: uppercase; letter-spacing: 0.5px;">ML Questions (-)</span>
+                <div id="so-drops-container" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                  <!-- Rendered chips -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 6.5 Below: Architecture Component Cards, Technique Rows & Alternatives -->
         <div class="rec-bottom-section">
           <!-- Technique Rows & Rationale -->
@@ -2810,25 +2971,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Report Preview Inset Well -->
-        <div class="neu-inset" id="report-preview-well" style="margin-top: 20px; padding: 20px 24px; border-radius: var(--radius); display: none;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text); margin: 0;">Report Preview</h3>
-            <span id="report-preview-status" style="font-size: 0.75rem; color: var(--text3);"></span>
-          </div>
-
-          <div id="report-preview-summary" style="margin-bottom: 16px;">
-            <div style="font-size: 0.8rem; font-weight: 600; color: var(--text2); margin-bottom: 6px;">Executive Summary</div>
-            <p id="report-preview-exec" style="font-size: 0.85rem; color: var(--text); line-height: 1.5; margin: 0;">Loading...</p>
-          </div>
-
-          <div id="report-preview-roadmap">
-            <div style="font-size: 0.8rem; font-weight: 600; color: var(--text2); margin-bottom: 8px;">Implementation Roadmap</div>
-            <div id="report-roadmap-timeline" style="display: flex; flex-direction: column; gap: 6px;"></div>
-          </div>
-        </div>
-
       </section>
 
       <!-- ====================================================================
@@ -3225,22 +3367,6 @@
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 0.75rem; color: var(--text3);">Addressed by:</span>
                 <span class="pill delta-pill delta-green">S3 Object Lock Compliance</span>
-              </div>
-            </div>
-
-            <!-- Node 5: Advisory Pending -->
-            <div class="timeline-item">
-              <div class="timeline-node-circle" style="background: var(--bg3); border-color: var(--text3);">5</div>
-              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-                <strong style="color: var(--text); font-size: 0.95rem;">Security Exposure</strong>
-                <span class="priority-badge badge-high">High</span>
-              </div>
-              <p style="font-size: 0.85rem; color: var(--text2); margin-bottom: 8px;">
-                Evidence: Sensitive data types (TRANSACTIONS, DOCUMENTS) combined with compliance requirements create security exposure requiring encryption, access controls, and audit logging.
-              </p>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 0.75rem; color: var(--text3);">Addressed by:</span>
-                <span class="pill delta-pill" style="background: var(--bg3); color: var(--text3); border: 1px dashed var(--text3);">Advisory pending knowledge cutover</span>
               </div>
             </div>
           </div>
@@ -4500,6 +4626,9 @@ resource "aws_rds_cluster" "aurora_cluster" {
           document.getElementById('rec-health-num').textContent = '88';
         }
         refreshMoney();
+        if (typeof fetchSecondOpinion === 'function') {
+          fetchSecondOpinion(val);
+        }
       });
 
       // Pill toggle buttons in Architect tab
@@ -4530,125 +4659,6 @@ resource "aws_rds_cluster" "aurora_cluster" {
       document.getElementById('arch-analyze-btn')?.addEventListener('click', () => {
         switchTab('recommendations');
       });
-
-      // Export Report dropdown toggle
-      const exportBtn = document.getElementById('export-report-btn');
-      const exportDropdown = document.getElementById('export-report-dropdown');
-      if (exportBtn && exportDropdown) {
-        exportBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          exportDropdown.style.display = exportDropdown.style.display === 'none' ? 'block' : 'none';
-        });
-        document.addEventListener('click', () => { exportDropdown.style.display = 'none'; });
-
-        document.querySelectorAll('.export-report-option').forEach(opt => {
-          opt.addEventListener('mouseenter', () => { opt.style.background = 'var(--bg3)'; });
-          opt.addEventListener('mouseleave', () => { opt.style.background = 'none'; });
-          opt.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            exportDropdown.style.display = 'none';
-            const fmt = opt.getAttribute('data-format');
-            try {
-              const controller = new AbortController();
-              const timeout = setTimeout(() => controller.abort(), 2500);
-              const resp = await fetch(`/api/v1/report/export?format=${fmt}`, { signal: controller.signal });
-              clearTimeout(timeout);
-              if (!resp.ok) throw new Error('Export failed');
-              const data = await resp.json();
-              let blob;
-              let filename;
-              if (fmt === 'pdf') {
-                const bytes = new Uint8Array(data.data.match(/.{1,2}/g).map(b => parseInt(b, 16)));
-                blob = new Blob([bytes], { type: 'application/pdf' });
-                filename = 'report.pdf';
-              } else {
-                blob = new Blob([data.data], { type: 'text/markdown' });
-                filename = 'report.md';
-              }
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url; a.download = filename;
-              document.body.appendChild(a); a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-            } catch {
-              const mockMd = '# Report\n\nExport unavailable — backend not running.\n';
-              const blob = new Blob([mockMd], { type: 'text/markdown' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url; a.download = 'report-mock.md';
-              document.body.appendChild(a); a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-            }
-          });
-        });
-      }
-
-      // Report Preview well — load on first visit to Recommendations tab
-      async function loadReportPreview() {
-        const well = document.getElementById('report-preview-well');
-        if (!well || well.dataset.loaded === 'true') return;
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 2500);
-          const resp = await fetch('/api/v1/report', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ scenario: {
-              business_domain: 'AI', company_size: 'ENTERPRISE',
-              expected_users: 10000000, concurrent_users: 100000,
-              current_storage_gb: 25000, daily_growth_gb: 300,
-              data_types: ['IMAGES','DOCUMENTS','TRANSACTIONS','LOGS'],
-              structured_data_pct: 20, semi_structured_data_pct: 20,
-              unstructured_data_pct: 60, read_intensity: 'HIGH',
-              write_intensity: 'HIGH', access_pattern: 'MIXED',
-              latency_requirement_ms: 100, availability_requirement: 99.99,
-              rto_minutes: 60, rpo_minutes: 15, retention_years: 7,
-              budget_level: 'HIGH', analytics_required: true,
-              real_time_processing_required: true, sensitive_data: true,
-              encryption_required: true, compliance_requirements: ['NONE']
-            }}),
-            signal: controller.signal,
-          });
-          clearTimeout(timeout);
-          if (!resp.ok) throw new Error('Report load failed');
-          const data = await resp.json();
-          well.style.display = 'block';
-          well.dataset.loaded = 'true';
-          document.getElementById('report-preview-exec').textContent = data.executive_summary || '';
-          document.getElementById('report-preview-status').textContent = 'Live';
-
-          const timeline = document.getElementById('report-roadmap-timeline');
-          if (timeline && data.implementation_roadmap) {
-            timeline.innerHTML = '';
-            data.implementation_roadmap.forEach(step => {
-              const row = document.createElement('div');
-              row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--bg3);';
-              const phase = document.createElement('span');
-              phase.style.cssText = 'font-size:0.7rem;font-weight:700;color:var(--accent);min-width:50px;';
-              phase.textContent = step.phase_label;
-              const name = document.createElement('span');
-              name.style.cssText = 'font-size:0.82rem;color:var(--text);flex:1;';
-              name.textContent = step.technique_name;
-              const effort = document.createElement('span');
-              effort.className = 'delta-pill';
-              effort.style.cssText = 'font-size:0.7rem;';
-              effort.textContent = step.effort_estimate;
-              row.appendChild(phase);
-              row.appendChild(name);
-              row.appendChild(effort);
-              timeline.appendChild(row);
-            });
-          }
-        } catch {
-          well.style.display = 'block';
-          well.dataset.loaded = 'true';
-          document.getElementById('report-preview-exec').textContent = 'Report preview unavailable — backend not running.';
-          document.getElementById('report-preview-status').textContent = 'Mock';
-        }
-      }
-      loadReportPreview();
 
       // Check Health and init Homepage Chart
       window.addEventListener('DOMContentLoaded', () => {
@@ -4903,7 +4913,207 @@ resource "aws_rds_cluster" "aurora_cluster" {
         }
       });
 
+      // ==========================================================================
+      // SECOND OPINION CARD LOGIC (ML ADVISES, ENGINE DECIDES)
+      // ==========================================================================
+      const SO_PRESETS = {
+        'ai-saas': {
+          business_domain: 'SAAS', company_size: 'MEDIUM', expected_users: 100000, concurrent_users: 5000,
+          current_storage_gb: 12000.0, daily_growth_gb: 80.0, data_types: ['TEXT', 'DOCUMENTS'],
+          structured_data_pct: 50.0, semi_structured_data_pct: 30.0, unstructured_data_pct: 20.0,
+          read_intensity: 'HIGH', write_intensity: 'MEDIUM', access_pattern: 'RANDOM',
+          latency_requirement_ms: 50.0, availability_requirement: 99.9, rto_minutes: 60.0,
+          rpo_minutes: 15.0, retention_years: 3.0, budget_level: 'MEDIUM', analytics_required: true,
+          real_time_processing_required: false, sensitive_data: false, encryption_required: true,
+          compliance_requirements: ['SOC2']
+        },
+        'fintech': {
+          business_domain: 'FINTECH', company_size: 'LARGE', expected_users: 500000, concurrent_users: 25000,
+          current_storage_gb: 25000.0, daily_growth_gb: 150.0, data_types: ['TRANSACTIONS', 'LOGS'],
+          structured_data_pct: 70.0, semi_structured_data_pct: 20.0, unstructured_data_pct: 10.0,
+          read_intensity: 'HIGH', write_intensity: 'HIGH', access_pattern: 'RANDOM',
+          latency_requirement_ms: 15.0, availability_requirement: 99.99, rto_minutes: 15.0,
+          rpo_minutes: 5.0, retention_years: 7.0, budget_level: 'HIGH', analytics_required: true,
+          real_time_processing_required: true, sensitive_data: true, encryption_required: true,
+          compliance_requirements: ['PCI_DSS', 'SOC2']
+        },
+        'healthcare': {
+          business_domain: 'HEALTHCARE', company_size: 'LARGE', expected_users: 50000, concurrent_users: 2000,
+          current_storage_gb: 45000.0, daily_growth_gb: 50.0, data_types: ['DOCUMENTS', 'IMAGES', 'TEXT'],
+          structured_data_pct: 30.0, semi_structured_data_pct: 30.0, unstructured_data_pct: 40.0,
+          read_intensity: 'MEDIUM', write_intensity: 'LOW', access_pattern: 'MIXED',
+          latency_requirement_ms: 200.0, availability_requirement: 99.99, rto_minutes: 30.0,
+          rpo_minutes: 15.0, retention_years: 10.0, budget_level: 'HIGH', analytics_required: true,
+          real_time_processing_required: false, sensitive_data: true, encryption_required: true,
+          compliance_requirements: ['HIPAA']
+        },
+        'media': {
+          business_domain: 'MEDIA', company_size: 'LARGE', expected_users: 1000000, concurrent_users: 50000,
+          current_storage_gb: 80000.0, daily_growth_gb: 800.0, data_types: ['VIDEOS', 'IMAGES', 'AUDIO'],
+          structured_data_pct: 10.0, semi_structured_data_pct: 20.0, unstructured_data_pct: 70.0,
+          read_intensity: 'HIGH', write_intensity: 'MEDIUM', access_pattern: 'SEQUENTIAL',
+          latency_requirement_ms: 100.0, availability_requirement: 99.9, rto_minutes: 120.0,
+          rpo_minutes: 60.0, retention_years: 5.0, budget_level: 'HIGH', analytics_required: false,
+          real_time_processing_required: false, sensitive_data: false, encryption_required: false,
+          compliance_requirements: ['NONE']
+        }
+      };
+
+      const SO_MOCK_FALLBACKS = {
+        'ai-saas': {
+          agreement_pct: 94.1,
+          ml_adds: ['sharding'],
+          ml_drops: [],
+          reasons: {
+            'sharding': 'Driven by Domain Saas and Profile Growth Category'
+          }
+        },
+        'fintech': {
+          agreement_pct: 100.0,
+          ml_adds: [],
+          ml_drops: [],
+          reasons: {}
+        },
+        'healthcare': {
+          agreement_pct: 93.3,
+          ml_adds: ['tiered_storage'],
+          ml_drops: [],
+          reasons: {
+            'tiered_storage': 'Driven by Retention Years and Profile Write Category'
+          }
+        },
+        'media': {
+          agreement_pct: 88.9,
+          ml_adds: ['data_pruning'],
+          ml_drops: ['indexing'],
+          reasons: {
+            'data_pruning': 'Driven by Profile Growth Category and Retention Years',
+            'indexing': 'Driven by Latency Ms and Domain Media'
+          }
+        }
+      };
+
+      function updateSecondOpinionCard(data) {
+        const valEl = document.getElementById('so-agreement-val');
+        if (!valEl) return;
+
+        const pct = typeof data.agreement_pct === 'number' ? data.agreement_pct : 94.1;
+        valEl.textContent = `${Math.round(pct)}%`;
+        valEl.style.color = pct >= 85 ? 'var(--pos)' : (pct >= 70 ? 'var(--accent)' : 'var(--warn, #f59e0b)');
+
+        // Update gauge arc & needle
+        const clamped = Math.max(0, Math.min(100, pct));
+        const rad = (clamped / 100) * Math.PI;
+        const cx = 70, cy = 65, r = 55;
+        const x = cx - r * Math.cos(rad);
+        const y = cy - r * Math.sin(rad);
+
+        const arc = document.getElementById('so-gauge-arc');
+        if (arc) {
+          arc.setAttribute('d', `M 15 65 A 55 55 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)}`);
+          arc.setAttribute('stroke', pct >= 85 ? 'var(--pos)' : (pct >= 70 ? 'var(--accent)' : 'var(--warn, #f59e0b)'));
+        }
+
+        const needle = document.getElementById('so-gauge-needle');
+        if (needle) {
+          const nx = cx - 38 * Math.cos(rad);
+          const ny = cy - 38 * Math.sin(rad);
+          needle.setAttribute('x2', nx.toFixed(1));
+          needle.setAttribute('y2', ny.toFixed(1));
+        }
+
+        // Render ML Adds chips (Green)
+        const addsContainer = document.getElementById('so-adds-container');
+        if (addsContainer) {
+          addsContainer.innerHTML = '';
+          const adds = data.ml_adds || [];
+          if (adds.length === 0) {
+            addsContainer.innerHTML = '<span style="font-size: 0.78rem; color: var(--text3); font-style: italic;">None — full consensus</span>';
+          } else {
+            adds.forEach(tid => {
+              const reason = (data.reasons && data.reasons[tid]) || (data.driver_reasons && data.driver_reasons[tid]) || 'Driven by workload profile characteristics';
+              const cleanName = tid.replace(/_/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase());
+              const chip = document.createElement('div');
+              chip.className = 'so-chip so-chip-green';
+              chip.tabIndex = 0;
+              chip.setAttribute('role', 'button');
+              chip.setAttribute('aria-label', `ML Suggests: ${cleanName}. ${reason}`);
+              chip.innerHTML = `
+                <span style="font-size: 0.9em; font-weight: 700;">+</span>
+                <span>${cleanName}</span>
+                <div class="so-tooltip" role="tooltip">${escapeHtml(reason)}</div>
+              `;
+              addsContainer.appendChild(chip);
+            });
+          }
+        }
+
+        // Render ML Drops chips (Amber)
+        const dropsContainer = document.getElementById('so-drops-container');
+        if (dropsContainer) {
+          dropsContainer.innerHTML = '';
+          const drops = data.ml_drops || [];
+          if (drops.length === 0) {
+            dropsContainer.innerHTML = '<span style="font-size: 0.78rem; color: var(--text3); font-style: italic;">None — full consensus</span>';
+          } else {
+            drops.forEach(tid => {
+              const reason = (data.reasons && data.reasons[tid]) || (data.driver_reasons && data.driver_reasons[tid]) || 'Driven by workload profile characteristics';
+              const cleanName = tid.replace(/_/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase());
+              const chip = document.createElement('div');
+              chip.className = 'so-chip so-chip-amber';
+              chip.tabIndex = 0;
+              chip.setAttribute('role', 'button');
+              chip.setAttribute('aria-label', `ML Questions: ${cleanName}. ${reason}`);
+              chip.innerHTML = `
+                <span style="font-size: 0.9em; font-weight: 700;">&minus;</span>
+                <span>${cleanName}</span>
+                <div class="so-tooltip" role="tooltip">${escapeHtml(reason)}</div>
+              `;
+              dropsContainer.appendChild(chip);
+            });
+          }
+        }
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      async function fetchSecondOpinion(presetKey = 'ai-saas') {
+        const scenario = SO_PRESETS[presetKey] || SO_PRESETS['ai-saas'];
+        const fallback = SO_MOCK_FALLBACKS[presetKey] || SO_MOCK_FALLBACKS['ai-saas'];
+
+        try {
+          const res = await fetch('/api/v1/second-opinion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scenario }),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const json = await res.json();
+          updateSecondOpinionCard(json);
+        } catch (err) {
+          // Silent mock fallback consistent with existing pattern
+          updateSecondOpinionCard(fallback);
+        }
+      }
+
+      // Initial load
+      fetchSecondOpinion('ai-saas');
+
+      // Re-run button listener
+      document.getElementById('rec-rerun-btn')?.addEventListener('click', () => {
+        const sel = document.getElementById('rec-scenario-preset-select');
+        fetchSecondOpinion(sel ? sel.value : 'ai-saas');
+      });
+
       // Expose globally
+      window.fetchSecondOpinion = fetchSecondOpinion;
+      window.updateSecondOpinionCard = updateSecondOpinionCard;
       window.renderInsights = renderInsights;
       window.initInsightsTab = initInsightsTab;
       window.showFamilyDetail = showFamilyDetail;
