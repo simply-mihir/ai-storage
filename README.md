@@ -171,7 +171,7 @@ ruff check .
 python scripts/case_study.py --workload all
 ```
 
-All 446 tests execute in under 60 seconds on standard local environments.
+All 467 tests execute in under 60 seconds on standard local environments.
 
 ---
 
