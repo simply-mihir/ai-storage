@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from storage_advisor.analytics.whatif import WhatIfAnalyzer
 from storage_advisor.architecture.builder import ArchitectureBuilder
+from storage_advisor.db.record import save_scenario
 from storage_advisor.detection.problem_detector import detect_problems
 from storage_advisor.domain.scenario import Scenario, upconvert_v1
 from storage_advisor.estimation.impact_estimator import estimate_impact
@@ -183,6 +184,7 @@ async def create_scenario(body: ScenarioRequest):
         )
 
     scenario_id = str(uuid4())
+    save_scenario(scenario_id, scenario.model_dump())
     return {
         "scenario_id": scenario_id,
         "normalized": scenario.model_dump(),
