@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import warnings
 from dataclasses import dataclass
 
 from storage_advisor.domain.recommendations import RecommendationResult
@@ -16,6 +17,30 @@ from storage_advisor.domain.scenario import Scenario
 from storage_advisor.estimation.impact_estimator import ImpactReport
 
 logger = logging.getLogger(__name__)
+
+_ENV_ALIASES: dict[str, str] = {
+    "LLM_MODEL_ID": "BEDROCK_MODEL_ID",
+    "LLM_FALLBACK_KEY": "GROQ_API_KEY",
+}
+
+
+def _env_with_alias(name: str, default: str | None = None) -> str | None:
+    """Read env var, falling back to its deprecated alias with a warning."""
+    value = os.environ.get(name)
+    if value is not None:
+        return value
+    alias = _ENV_ALIASES.get(name)
+    if alias is not None:
+        alias_value = os.environ.get(alias)
+        if alias_value is not None:
+            warnings.warn(
+                f"Environment variable {alias} is deprecated; "
+                f"use {name} instead. The old name will be removed in a future release.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return alias_value
+    return default
 
 
 @dataclass
@@ -91,7 +116,7 @@ class BedrockExplainer:
         model_id: str | None = None,
     ):
         self.region = region or os.environ.get("AWS_REGION", "us-east-1")
-        self.model_id = model_id or os.environ.get(
+        self.model_id = model_id or _env_with_alias(
             "LLM_MODEL_ID", "amazon.nova-lite-v1:0",
         )
         self.available = False
@@ -115,7 +140,7 @@ class BedrockExplainer:
         self._groq_client = None
         try:
             from groq import Groq
-            api_key = os.environ.get("LLM_FALLBACK_KEY")
+            api_key = _env_with_alias("LLM_FALLBACK_KEY")
             if api_key:
                 self._groq_client = Groq(api_key=api_key)
                 self.groq_available = True

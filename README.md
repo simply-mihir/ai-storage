@@ -175,6 +175,19 @@ All 446 tests execute in under 60 seconds on standard local environments.
 
 ---
 
+## Upgrading
+
+The following environment variable names were renamed. The old names still work for one release and emit a `DeprecationWarning` at startup:
+
+| Old Name | New Name |
+|---|---|
+| `BEDROCK_MODEL_ID` | `LLM_MODEL_ID` |
+| `GROQ_API_KEY` | `LLM_FALLBACK_KEY` |
+
+Update your `.env` and deployment configs before the next major release.
+
+---
+
 ## Roadmap
 
 - [ ] **Multi-Region Active-Active Topology Modeling**: Automated cross-region replication latency and ingress/egress cost modeling.
