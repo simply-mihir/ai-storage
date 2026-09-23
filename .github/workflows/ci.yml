@@ -50,6 +50,15 @@ jobs:
       - name: Run test suite
         run: pytest -q
 
+      # Tracked truth files must change only in deliberate commits,
+      # never as test side effects. Fail if any are dirty.
+      - name: Verify test hermeticity (no tracked truth files modified)
+        run: >-
+          git diff --exit-code --
+          ml/model.joblib
+          tests/kb/warnings_snapshot.json
+          tests/kb/golden_provider_snapshot.json
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
