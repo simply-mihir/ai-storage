@@ -42,11 +42,11 @@ def test_feature_columns_v2_and_persistence() -> None:
     assert persisted == FEATURE_COLUMNS_V2
 
 
-def test_training_reproduces_holdout_jaccard_ge_80() -> None:
+def test_training_reproduces_holdout_jaccard_ge_80(tmp_path: Path) -> None:
     """Training reproduces holdout jaccard >= 0.80 at fixed seed."""
     results = train_distillation_model(
         parquet_path="data/synthetic/scenarios.parquet",
-        output_dir="ml",
+        output_dir=str(tmp_path),
         random_state=42,
     )
 
