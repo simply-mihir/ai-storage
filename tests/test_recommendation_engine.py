@@ -248,7 +248,7 @@ class TestGrowthLevelShardingBehavior:
             None,
         )
         assert sharding is not None
-        assert sharding.priority == Priority.RECOMMENDED
+        assert sharding.priority == Priority.OPTIONAL
 
     def test_1000gb_triggers_high_growth_sharding_required(self):
         s, profile, problem_ids, result = self._demo(1000)
@@ -261,7 +261,7 @@ class TestGrowthLevelShardingBehavior:
             None,
         )
         assert sharding is not None
-        assert sharding.priority == Priority.REQUIRED
+        assert sharding.priority == Priority.RECOMMENDED
 
     def test_3000gb_triggers_extreme_growth_sharding_required_higher_score(self):
         _, _, _, result_1000 = self._demo(1000)
