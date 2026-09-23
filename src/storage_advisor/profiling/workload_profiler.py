@@ -56,6 +56,13 @@ class CompliancePresence(StrEnum):
     PRESENT = "PRESENT"
 
 
+class ConcurrencyClass(StrEnum):
+    LOW = "LOW"
+    MODERATE = "MODERATE"
+    HIGH = "HIGH"
+    EXTREME = "EXTREME"
+
+
 # ---------------------------------------------------------------------------
 # Thresholds — every number here is an engineering assumption, not an
 # industry standard.  See docs/assumptions.md for rationale.
@@ -279,6 +286,57 @@ def _classify_disaster_recovery(
 
 
 # ---------------------------------------------------------------------------
+# V2 derivation functions
+# ---------------------------------------------------------------------------
+
+def derive_dr_severity(
+    rto_hours: float | None, rpo_hours: float | None,
+) -> PressureLevel | None:
+    """Derive disaster-recovery severity from v2 hour-based inputs.
+
+    Returns None when both inputs are None (caller falls back to legacy).
+
+    Band table:
+        rto <= 1 or rpo <= 0.25  -> HIGH
+        rto <= 24 or rpo <= 4    -> MEDIUM
+        else                     -> LOW
+    """
+    if rto_hours is None and rpo_hours is None:
+        return None
+    rto = rto_hours if rto_hours is not None else float("inf")
+    rpo = rpo_hours if rpo_hours is not None else float("inf")
+    if rto <= 1 or rpo <= 0.25:
+        return PressureLevel.HIGH
+    if rto <= 24 or rpo <= 4:
+        return PressureLevel.MEDIUM
+    return PressureLevel.LOW
+
+
+def derive_concurrency_class(
+    concurrent_users: int | None,
+) -> ConcurrencyClass | None:
+    """Classify concurrent-user count into bands.
+
+    Returns None when input is None.
+
+    Band table:
+        < 1,000    -> LOW
+        < 25,000   -> MODERATE
+        < 250,000  -> HIGH
+        >= 250,000 -> EXTREME
+    """
+    if concurrent_users is None:
+        return None
+    if concurrent_users < 1_000:
+        return ConcurrencyClass.LOW
+    if concurrent_users < 25_000:
+        return ConcurrencyClass.MODERATE
+    if concurrent_users < 250_000:
+        return ConcurrencyClass.HIGH
+    return ConcurrencyClass.EXTREME
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -315,7 +373,8 @@ def profile_workload(scenario: Scenario) -> WorkloadProfile:
         compliance_pressure=_classify_compliance(
             scenario.compliance_requirements
         ),
-        disaster_recovery_pressure=_classify_disaster_recovery(
-            scenario.rto_minutes, scenario.rpo_minutes
+        disaster_recovery_pressure=(
+            derive_dr_severity(scenario.rto_hours, scenario.rpo_hours)
+            or _classify_disaster_recovery(scenario.rto_minutes, scenario.rpo_minutes)
         ),
     )

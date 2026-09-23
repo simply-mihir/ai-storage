@@ -16,12 +16,15 @@ from storage_advisor.profiling.workload_profiler import (
     AVAIL_HIGH,
     AVAIL_MISSION_CRITICAL,
     AVAIL_VERY_HIGH,
+    ConcurrencyClass,
     GrowthClass,
     LatencyClass,
     PressureLevel,
     RetentionClass,
     AvailabilityClass,
     CompliancePresence,
+    derive_concurrency_class,
+    derive_dr_severity,
     profile_workload,
 )
 
@@ -172,3 +175,96 @@ class TestObjectStoragePressure:
             structured_data_pct=80, semi_structured_data_pct=10,
         ))
         assert p.object_storage_pressure == PressureLevel.MEDIUM
+
+
+class TestDeriveDrSeverity:
+    """Band boundary tests for derive_dr_severity."""
+
+    def test_both_none_returns_none(self):
+        assert derive_dr_severity(None, None) is None
+
+    def test_rto_none_rpo_present_high(self):
+        assert derive_dr_severity(None, 0.25) == PressureLevel.HIGH
+
+    def test_rto_present_rpo_none_high(self):
+        assert derive_dr_severity(1.0, None) == PressureLevel.HIGH
+
+    def test_rto_at_threshold_high(self):
+        assert derive_dr_severity(1.0, 10.0) == PressureLevel.HIGH
+
+    def test_rpo_at_threshold_high(self):
+        assert derive_dr_severity(100.0, 0.25) == PressureLevel.HIGH
+
+    def test_rto_just_above_high(self):
+        assert derive_dr_severity(1.01, 10.0) == PressureLevel.MEDIUM
+
+    def test_rpo_just_above_high(self):
+        assert derive_dr_severity(100.0, 0.26) == PressureLevel.MEDIUM
+
+    def test_rto_at_threshold_medium(self):
+        assert derive_dr_severity(24.0, 100.0) == PressureLevel.MEDIUM
+
+    def test_rpo_at_threshold_medium(self):
+        assert derive_dr_severity(100.0, 4.0) == PressureLevel.MEDIUM
+
+    def test_both_above_medium_thresholds(self):
+        assert derive_dr_severity(25.0, 5.0) == PressureLevel.LOW
+
+    def test_rto_just_above_medium(self):
+        assert derive_dr_severity(24.01, 5.0) == PressureLevel.LOW
+
+    def test_rpo_just_above_medium(self):
+        assert derive_dr_severity(25.0, 4.01) == PressureLevel.LOW
+
+    def test_both_zero_is_high(self):
+        assert derive_dr_severity(0.0, 0.0) == PressureLevel.HIGH
+
+
+class TestDeriveConcurrencyClass:
+    """Band boundary tests for derive_concurrency_class."""
+
+    def test_none_returns_none(self):
+        assert derive_concurrency_class(None) is None
+
+    def test_zero_is_low(self):
+        assert derive_concurrency_class(0) == ConcurrencyClass.LOW
+
+    def test_below_1000_is_low(self):
+        assert derive_concurrency_class(999) == ConcurrencyClass.LOW
+
+    def test_at_1000_is_moderate(self):
+        assert derive_concurrency_class(1_000) == ConcurrencyClass.MODERATE
+
+    def test_below_25000_is_moderate(self):
+        assert derive_concurrency_class(24_999) == ConcurrencyClass.MODERATE
+
+    def test_at_25000_is_high(self):
+        assert derive_concurrency_class(25_000) == ConcurrencyClass.HIGH
+
+    def test_below_250000_is_high(self):
+        assert derive_concurrency_class(249_999) == ConcurrencyClass.HIGH
+
+    def test_at_250000_is_extreme(self):
+        assert derive_concurrency_class(250_000) == ConcurrencyClass.EXTREME
+
+    def test_above_250000_is_extreme(self):
+        assert derive_concurrency_class(1_000_000) == ConcurrencyClass.EXTREME
+
+
+class TestDrSeverityWiring:
+    """profile_workload uses derive_dr_severity when v2 fields present."""
+
+    def test_v2_rto_hours_overrides_legacy(self):
+        s = _scenario(rto_minutes=480.0, rpo_minutes=240.0, rto_hours=0.5, rpo_hours=0.1)
+        p = profile_workload(s)
+        assert p.disaster_recovery_pressure == PressureLevel.HIGH
+
+    def test_legacy_fallback_when_no_v2_fields(self):
+        s = _scenario(rto_minutes=480.0, rpo_minutes=240.0)
+        p = profile_workload(s)
+        assert p.disaster_recovery_pressure == PressureLevel.LOW
+
+    def test_v2_medium_band(self):
+        s = _scenario(rto_minutes=480.0, rpo_minutes=240.0, rto_hours=12.0, rpo_hours=2.0)
+        p = profile_workload(s)
+        assert p.disaster_recovery_pressure == PressureLevel.MEDIUM
