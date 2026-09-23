@@ -10,6 +10,25 @@ jobs:
   ci:
     name: Lint, Test & Build
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: advisor
+          POSTGRES_PASSWORD: advisor
+          POSTGRES_DB: advisor
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U advisor"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://advisor:advisor@localhost:5432/advisor
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
