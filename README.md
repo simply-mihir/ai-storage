@@ -53,10 +53,35 @@ The application degrades gracefully: all core recommendation, profiling, impact 
 | `API_KEYS` | String (CSV) | `dev-demo-key` | Comma-separated list of valid API keys for authenticating against `/api/v1/*` routes. |
 | `ENV` | String | `dev` | Deployment environment mode (`dev`, `staging`, `prod`). When set to `dev`, unauthenticated requests fall back to `dev-demo-key`. In `prod`, missing keys return `401 Unauthorized`. |
 | `AWS_REGION` | String | `us-east-1` | AWS region targeted for live pricing and cloud integrations. |
-| `AWS_ACCESS_KEY_ID` | String | None | Optional credentials for Amazon Bedrock and cloud storage. |
-| `AWS_SECRET_ACCESS_KEY` | String | None | Optional credentials for Amazon Bedrock and cloud storage. |
-| `GROQ_API_KEY` | String | None | Optional API key for secondary LLM explanation fallback tier. |
+| `AWS_ACCESS_KEY_ID` | String | None | Optional credentials for cloud AI inference and storage services. |
+| `AWS_SECRET_ACCESS_KEY` | String | None | Optional credentials for cloud AI inference and storage services. |
+| `LLM_FALLBACK_KEY` | String | None | Optional API key for secondary LLM explanation fallback tier. |
+| `S3_BUCKET_NAME` | String | None | Optional S3 bucket for cloud storage integration. |
+| `DATABASE_URL` | String | None | PostgreSQL connection URI for the system-of-record store. Omit for graceful offline degradation. |
+| `LLM_MODEL_ID` | String | `amazon.nova-lite-v1:0` | Model identifier for the primary cloud LLM inference tier. |
 | `PORT` | Integer | `8001` | TCP port binding for the FastAPI web server. |
+
+---
+
+## API Endpoint Reference
+
+| Method | Route | Description |
+|---|---|---|
+| `GET` | `/api/v1/config` | Client configuration (env, API key mode) |
+| `POST` | `/api/v1/scenarios` | Create a workload scenario and run the detection pipeline |
+| `POST` | `/api/v1/recommendations` | Generate prioritized technique recommendations |
+| `POST` | `/api/v1/explain` | Produce AI-synthesized architectural rationale |
+| `POST` | `/api/v1/what-if` | Compare two scenario variants side by side |
+| `POST` | `/api/v1/second-opinion` | ML second-opinion advisory verdict |
+| `GET` | `/api/v1/pricing` | Live AWS list-rate pricing parameters |
+| `POST` | `/api/v1/real-cost` | Itemized monthly cost projection with line items |
+| `POST` | `/api/v1/trajectory` | 24-month growth and cost trajectory simulation |
+| `POST` | `/api/v1/export/terraform` | Generate production Terraform (HCL) scaffold |
+| `POST` | `/api/v1/report` | Build consultant-grade report payload |
+| `GET` | `/api/v1/report/export` | Export report as Markdown or PDF (`?format=md\|pdf`) |
+| `GET` | `/api/v1/insights` | Analytics figures (Plotly JSON specs) |
+| `GET` | `/health` | Liveness probe (open, no auth required) |
+| `GET` | `/metrics` | Prometheus metrics export |
 
 ---
 
@@ -85,7 +110,7 @@ The single-page dashboard organizes complex architectural analysis into eight co
    - Spend distribution doughnut chart visualizing cost center proportions across storage, compute, and networking.
 
 5. **Tab 5: Explainability (Rationale Synthesis & Audit Chain)**
-   - Context-aware architectural rationale synthesis powered by a three-tier resilient fallback chain (Bedrock -> Groq -> deterministic structured engine).
+   - Context-aware architectural rationale synthesis powered by a three-tier resilient fallback chain (cloud LLM tier 1 -> cloud LLM tier 2 -> deterministic structured engine).
    - Chronological decision traceability chain cross-referencing formal knowledge base definitions.
 
 6. **Tab 6: Growth (24-Month Trajectory Simulator)**
@@ -146,7 +171,7 @@ ruff check .
 python scripts/case_study.py --workload all
 ```
 
-All 436 tests execute in under 50 seconds on standard local environments.
+All 446 tests execute in under 60 seconds on standard local environments.
 
 ---
 

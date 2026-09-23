@@ -110,14 +110,14 @@ A structured, timed walkthrough of the AI Data Architect platform for systems ar
 
 * **Objective**: Demonstrate that external AI API rate limits, network timeouts, or cloud outages cannot compromise the core recommendation platform.
 * **Execution**:
-  1. Revoke or unset the `AWS_ACCESS_KEY_ID` or `GROQ_API_KEY` environment variables (or simulate network disconnect).
+  1. Revoke or unset the `AWS_ACCESS_KEY_ID` or `LLM_FALLBACK_KEY` environment variables (or simulate network disconnect).
   2. Request an explanation via `POST /api/v1/explain` or reload the Explainability tab.
 * **Observed System Behavior**:
   - The API captures the external connection failure, logs a structured warning, and activates the deterministic structured template synthesizer.
   - The response returns immediately (`HTTP 200`) with `"source": "structured"` and complete, formatted technical rationales.
   - The Prometheus metric `ai_fallback_tier{tier="structured_fallback"}` increments by 1.
 * **Talking Point**:
-  - "Notice that the UI never hangs, crashes, or returns an error. Our architecture enforces a three-tier resilient fallback: Bedrock -> Groq -> deterministic structured engine. Architectural advice is 100% resilient and operational in air-gapped environments."
+  - "Notice that the UI never hangs, crashes, or returns an error. Our architecture enforces a three-tier resilient fallback: cloud LLM tier 1 -> cloud LLM tier 2 -> deterministic structured engine. Architectural advice is 100% resilient and operational in air-gapped environments."
 
 ---
 

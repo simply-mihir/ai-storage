@@ -92,7 +92,7 @@ class BedrockExplainer:
     ):
         self.region = region or os.environ.get("AWS_REGION", "us-east-1")
         self.model_id = model_id or os.environ.get(
-            "BEDROCK_MODEL_ID", "amazon.nova-lite-v1:0",
+            "LLM_MODEL_ID", "amazon.nova-lite-v1:0",
         )
         self.available = False
         self._client = None
@@ -115,7 +115,7 @@ class BedrockExplainer:
         self._groq_client = None
         try:
             from groq import Groq
-            api_key = os.environ.get("GROQ_API_KEY")
+            api_key = os.environ.get("LLM_FALLBACK_KEY")
             if api_key:
                 self._groq_client = Groq(api_key=api_key)
                 self.groq_available = True

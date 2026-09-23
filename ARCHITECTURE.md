@@ -25,7 +25,7 @@ flowchart TD
 
     subgraph Advisory & Explainability Decoupled
         ML[ML Second-Opinion Distiller\n- Logistic ClassifierChain\n- Agreement metric\n- Divergence flags]
-        AI[AI Explainer Chain\n- Bedrock Primary\n- Groq Secondary\n- Deterministic Structured Fallback]
+        AI[AI Explainer Chain\n- Cloud LLM Primary\n- Cloud LLM Secondary\n- Deterministic Structured Fallback]
     end
 
     S --> P
@@ -55,7 +55,7 @@ flowchart TD
 
 ### ADR 001: Deterministic Engine Authority vs. Decoupled AI Explanation
 * **Context**: LLM outputs are probabilistic and non-reproducible. Production infrastructure choices demand auditability, formal traceability, and deterministic stability across identical inputs.
-* **Decision**: All architectural decisions, component selections, prioritization tiers, and quantitative impact projections are computed exclusively by the deterministic rules engine. Generative models (Amazon Bedrock Nova Lite and Groq Qwen) operate strictly downstream as read-only synthesizers of human-readable rationale.
+* **Decision**: All architectural decisions, component selections, prioritization tiers, and quantitative impact projections are computed exclusively by the deterministic rules engine. Generative LLM models operate strictly downstream as read-only synthesizers of human-readable rationale via a two-tier cloud fallback chain.
 * **Consequences**: If external AI services encounter API throttling, network timeouts, or complete outages, the system falls back seamlessly to deterministic structured templates (`source="structured"`). Zero decisions or cost numbers are ever delegated to generative model parameters.
 
 ### ADR 002: Dual-Track API Exposure & Migration Cutover
@@ -121,7 +121,7 @@ src/storage_advisor/
 │   └── terraform.py     Automated HCL Terraform scaffold generation
 ├── integrations/        External cloud and provider interfaces
 │   ├── aws.py           AWS SDK client bindings and credential resolution
-│   ├── bedrock.py       Bedrock Nova Lite and Groq explanation fallback chain
+│   ├── bedrock.py       Cloud LLM explanation fallback chain (two-tier)
 │   └── pricing.py       AWS Pricing API client with regional rate fallback tables
 ├── kb/                  Knowledge Base v2 catalog engine
 │   ├── loader.py        YAML discovery, inheritance merging, and NetworkX graph projection

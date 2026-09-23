@@ -10,8 +10,8 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - DATABASE_URL=postgresql://advisor:advisor@postgres:5432/advisor
-      - BEDROCK_MODEL_ID=${BEDROCK_MODEL_ID:-amazon.nova-lite-v1:0}
-      - GROQ_API_KEY=${GROQ_API_KEY}
+      - LLM_MODEL_ID=${LLM_MODEL_ID:-amazon.nova-lite-v1:0}
+      - LLM_FALLBACK_KEY=${LLM_FALLBACK_KEY}
       - API_KEYS=${API_KEYS:-dev-demo-key}
       - ENV=${ENV:-dev}
     volumes:
