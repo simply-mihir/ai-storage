@@ -22,6 +22,26 @@ from storage_advisor.knowledge.technique_catalog import load_techniques
 
 TECHNIQUE_IDS = sorted(t.id for t in load_techniques())
 
+# TODO: retrain classifier to incorporate v2 features (backup_frequency_per_week,
+# realtime_required, ml_required, streaming_required) once scenario store is
+# regenerated and validated. Until then, FEATURE_COLUMNS pins the v1 feature set.
+
+FEATURE_COLUMNS: list[str] = [
+    "users",
+    "daily_growth_gb",
+    "storage_size_gb",
+    "latency_ms",
+    "availability_pct",
+    "rto_hours",
+    "rpo_hours",
+    "retention_years",
+    "analytics_flag",
+    "read_intensity",
+    "write_intensity",
+    "profile_scale_category",
+    "profile_growth_category",
+]
+
 _LABEL_ENCODE_COLS = [
     "read_intensity",
     "write_intensity",
@@ -211,7 +231,7 @@ def run_experiment(
     print(f"Rule agreement rate:  {rule_agreement_rate:.4f} "
           f"(top-5 overlap >= 3)")
 
-    print(f"\nTop 10 features by importance:")
+    print("\nTop 10 features by importance:")
     for _, r in importance_df.head(10).iterrows():
         print(f"  {r['feature']:<35} {r['importance']:.4f}")
 

@@ -7,7 +7,6 @@ from __future__ import annotations
 import json
 import logging
 import random
-import warnings
 from pathlib import Path
 
 import numpy as np
@@ -20,7 +19,9 @@ from storage_advisor.domain.scenario import Scenario
 from storage_advisor.estimation.impact_estimator import estimate_impact
 from storage_advisor.knowledge.technique_catalog import load_techniques
 from storage_advisor.profiling.workload_profiler import profile_workload
-from storage_advisor.recommendation.recommendation_engine import run_recommendation_engine
+from storage_advisor.recommendation.recommendation_engine import (
+    run_recommendation_engine,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +163,27 @@ _DOMAIN_PRIORS = {
     },
 }
 
+_DOMAIN_BACKUP_FREQ = {
+    "fintech":    [14, 21, 28, 42],
+    "healthcare": [14, 21, 28],
+    "media":      [1, 3, 7],
+    "gaming":     [3, 7, 14],
+    "saas":       [7, 14, 21],
+    "iot":        [1, 3, 7],
+    "ai_startup": [3, 7, 14],
+    "ecommerce":  [7, 14, 21],
+}
+
+_DOMAIN_ML_PROB = {
+    "fintech": 0.10, "healthcare": 0.20, "media": 0.20, "gaming": 0.30,
+    "saas": 0.15, "iot": 0.30, "ai_startup": 0.80, "ecommerce": 0.25,
+}
+
+_DOMAIN_STREAMING_PROB = {
+    "fintech": 0.30, "healthcare": 0.10, "media": 0.60, "gaming": 0.40,
+    "saas": 0.15, "iot": 0.70, "ai_startup": 0.40, "ecommerce": 0.30,
+}
+
 _BUSINESS_DOMAIN_MAP = {
     "fintech": "FINTECH",
     "healthcare": "HEALTHCARE",
@@ -230,9 +252,17 @@ def _sample_scenario(
     encryption = sensitive or rng.random() < 0.2
     real_time = (latency_ms <= 50 and write_int == "HIGH") or rng.random() < 0.3
 
+    rto_hours = rto_minutes / 60.0
+    rpo_hours = rpo_minutes / 60.0
+    backup_freq = rng.choice(_DOMAIN_BACKUP_FREQ[domain])
+    realtime_req = latency_ms <= 20 or (latency_ms <= 50 and rng.random() < 0.4)
+    ml_req = rng.random() < _DOMAIN_ML_PROB[domain]
+    streaming_req = rng.random() < _DOMAIN_STREAMING_PROB[domain]
+
     return {
         "scenario_id": scenario_id,
         "domain": domain,
+        "schema_version": 2,
         "business_domain": _BUSINESS_DOMAIN_MAP[domain],
         "company_size": company_size,
         "expected_users": users,
@@ -257,6 +287,12 @@ def _sample_scenario(
         "sensitive_data": sensitive,
         "encryption_required": encryption,
         "compliance_requirements": compliance,
+        "rto_hours": rto_hours,
+        "rpo_hours": rpo_hours,
+        "backup_frequency_per_week": backup_freq,
+        "realtime_required": realtime_req,
+        "ml_required": ml_req,
+        "streaming_required": streaming_req,
     }
 
 
@@ -328,12 +364,16 @@ class ScenarioGenerator:
                     "write_intensity": raw["write_intensity"],
                     "latency_ms": raw["latency_requirement_ms"],
                     "availability_pct": raw["availability_requirement"],
-                    "rto_hours": raw["rto_minutes"] / 60.0,
-                    "rpo_hours": raw["rpo_minutes"] / 60.0,
+                    "rto_hours": raw["rto_hours"],
+                    "rpo_hours": raw["rpo_hours"],
                     "retention_years": raw["retention_years"],
                     "compliance": json.dumps(raw["compliance_requirements"]),
                     "analytics_flag": raw["analytics_required"],
                     "budget_tier": raw["budget_level"],
+                    "backup_frequency_per_week": raw["backup_frequency_per_week"],
+                    "realtime_required": raw["realtime_required"],
+                    "ml_required": raw["ml_required"],
+                    "streaming_required": raw["streaming_required"],
                     # Profiler
                     "profile_read_category": str(profile.read_pressure),
                     "profile_write_category": str(profile.write_pressure),
@@ -377,7 +417,7 @@ class ScenarioGenerator:
                 }
                 rows.append(row)
 
-            except Exception as e:
+            except (ValueError, KeyError, TypeError) as e:
                 failures.append(f"{scenario_id}: {e}")
                 logger.warning("Scenario %s failed: %s", scenario_id, e)
 
@@ -408,7 +448,7 @@ class ScenarioGenerator:
         for col in df.columns:
             print(f"  {col:<35} {df[col].dtype}")
 
-        print(f"\nFirst 3 rows:")
+        print("\nFirst 3 rows:")
         with pd.option_context("display.max_columns", None, "display.width", 200):
             print(df.head(3).to_string(index=False))
 
@@ -419,7 +459,7 @@ class ScenarioGenerator:
                 f"  min={col.min():.1f}  max={col.max():.1f}"
             )
 
-        print(f"\nScenarios per domain:")
+        print("\nScenarios per domain:")
         for domain, count in df["domain"].value_counts().sort_index().items():
             print(f"  {domain:<15} {count}")
 
