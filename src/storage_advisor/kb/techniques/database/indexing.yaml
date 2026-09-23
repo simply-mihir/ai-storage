@@ -7,6 +7,7 @@ mechanism: "Builds B-tree, hash, or GIN/GiST auxiliary structures that map colum
 solves:
   - HIGH_READ_LATENCY
   - LARGE_TRANSACTIONAL_DATASET
+  - QUERY_PERFORMANCE_DEGRADATION
 synergies_with:
   - partitioning
   - query_optimization

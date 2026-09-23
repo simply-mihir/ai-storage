@@ -914,3 +914,50 @@ class TestGoldenProviderSnapshot:
             expected = json.load(f)
         actual = sorted(get_techniques(), key=lambda t: t["id"])
         assert actual == expected
+
+
+# ---------------------------------------------------------------------------
+# §32 — Solves wiring approval: new problem → technique edges
+# ---------------------------------------------------------------------------
+
+class TestSolvesWiringApproval:
+    """Verify that Lesson-3 solves edges are wired correctly."""
+
+    def _solves_for(self, technique_id: str) -> list[str]:
+        techniques = get_techniques()
+        tech = next(t for t in techniques if t["id"] == technique_id)
+        return tech["solves"]
+
+    def test_cost_overrun_risk_wired_to_tiered_storage(self):
+        assert "COST_OVERRUN_RISK" in self._solves_for("tiered_storage")
+
+    def test_cost_overrun_risk_wired_to_archiving(self):
+        assert "COST_OVERRUN_RISK" in self._solves_for("archiving")
+
+    def test_cost_overrun_risk_wired_to_compression(self):
+        assert "COST_OVERRUN_RISK" in self._solves_for("compression")
+
+    def test_query_perf_degradation_wired_to_indexing(self):
+        assert "QUERY_PERFORMANCE_DEGRADATION" in self._solves_for("indexing")
+
+    def test_query_perf_degradation_wired_to_partitioning(self):
+        assert "QUERY_PERFORMANCE_DEGRADATION" in self._solves_for("partitioning")
+
+    def test_query_perf_degradation_wired_to_caching(self):
+        assert "QUERY_PERFORMANCE_DEGRADATION" in self._solves_for("caching")
+
+    def test_query_perf_degradation_wired_to_materialized_views(self):
+        assert "QUERY_PERFORMANCE_DEGRADATION" in self._solves_for("materialized_views")
+
+    def test_maintenance_burden_wired_to_lifecycle_management(self):
+        assert "MAINTENANCE_BURDEN" in self._solves_for("lifecycle_management")
+
+    def test_maintenance_burden_wired_to_tiered_storage(self):
+        assert "MAINTENANCE_BURDEN" in self._solves_for("tiered_storage")
+
+    def test_security_exposure_not_wired(self):
+        """SECURITY_EXPOSURE is v2_only — no technique should solve it yet."""
+        for tech in get_techniques():
+            assert "SECURITY_EXPOSURE" not in tech["solves"], (
+                f"{tech['id']} should not solve SECURITY_EXPOSURE"
+            )

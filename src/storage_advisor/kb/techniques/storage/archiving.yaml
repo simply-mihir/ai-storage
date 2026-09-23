@@ -10,6 +10,7 @@ solves:
   - MODERATE_STORAGE_GROWTH
   - HIGH_STORAGE_GROWTH
   - EXTREME_STORAGE_GROWTH
+  - COST_OVERRUN_RISK
 synergies_with:
   - lifecycle_management
   - tiered_storage

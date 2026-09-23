@@ -10,6 +10,7 @@ solves:
   - HIGH_STORAGE_GROWTH
   - EXTREME_STORAGE_GROWTH
   - LONG_TERM_RETENTION
+  - MAINTENANCE_BURDEN
 synergies_with:
   - tiered_storage
   - archiving

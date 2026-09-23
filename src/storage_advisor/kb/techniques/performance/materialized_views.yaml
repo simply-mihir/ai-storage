@@ -7,6 +7,7 @@ mechanism: "Executes a defining query and persists its result set as a physical 
 solves:
   - HIGH_READ_LATENCY
   - HIGH_ANALYTICS_WORKLOAD
+  - QUERY_PERFORMANCE_DEGRADATION
 synergies_with:
   - data_aggregation
   - columnar_storage

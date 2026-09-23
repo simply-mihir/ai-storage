@@ -10,6 +10,8 @@ solves:
   - HIGH_STORAGE_GROWTH
   - EXTREME_STORAGE_GROWTH
   - LONG_TERM_RETENTION
+  - COST_OVERRUN_RISK
+  - MAINTENANCE_BURDEN
 synergies_with:
   - lifecycle_management
   - archiving

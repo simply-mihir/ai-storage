@@ -14,6 +14,7 @@ solves:
   - HIGH_STORAGE_GROWTH
   - EXTREME_STORAGE_GROWTH
   - HOT_COLD_DATA_MIX
+  - COST_OVERRUN_RISK
 applicable_when:
   storage_growth: [MEDIUM, MODERATE, HIGH, EXTREME]
 synergies_with:

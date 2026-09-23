@@ -13,6 +13,7 @@ mechanism: >-
 solves:
   - HIGH_READ_LATENCY
   - SCALABILITY_PRESSURE
+  - QUERY_PERFORMANCE_DEGRADATION
 applicable_when:
   read_pressure: [HIGH]
   latency_class: [LOW_LATENCY, ULTRA_LOW_LATENCY]

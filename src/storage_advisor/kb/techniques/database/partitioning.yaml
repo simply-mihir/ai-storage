@@ -8,6 +8,7 @@ solves:
   - LARGE_TRANSACTIONAL_DATASET
   - HIGH_WRITE_PRESSURE
   - HIGH_READ_LATENCY
+  - QUERY_PERFORMANCE_DEGRADATION
 synergies_with:
   - indexing
   - sharding
