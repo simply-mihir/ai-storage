@@ -83,6 +83,52 @@ class TestWhatIfEndpoint:
         assert "summary" in data
 
 
+V2_SCENARIO = {
+    **DEMO_SCENARIO,
+    "schema_version": 2,
+    "rto_hours": 1.0,
+    "rpo_hours": 0.25,
+    "backup_frequency_per_week": 14,
+    "realtime_required": True,
+    "ml_required": True,
+    "streaming_required": True,
+}
+
+
+class TestV2PayloadAcceptance:
+    def test_v2_scenario_accepted(self):
+        resp = client.post("/api/v1/scenarios", json=V2_SCENARIO)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["normalized"]["schema_version"] == 2
+        assert data["normalized"]["rto_hours"] == 1.0
+
+    def test_v1_payload_upconverted(self):
+        resp = client.post("/api/v1/scenarios", json=DEMO_SCENARIO)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["normalized"]["schema_version"] == 2
+
+    def test_v2_recommendations_surface_new_problems(self):
+        resp = client.post(
+            "/api/v1/recommendations",
+            json={"scenario": V2_SCENARIO},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        problem_ids = {p["problem_id"] for p in data["problems"]}
+        assert "SECURITY_EXPOSURE" in problem_ids
+        assert "QUERY_PERFORMANCE_DEGRADATION" in problem_ids
+
+    def test_v1_recommendations_still_work(self):
+        resp = client.post(
+            "/api/v1/recommendations",
+            json={"scenario": DEMO_SCENARIO},
+        )
+        assert resp.status_code == 200
+        assert len(resp.json()["recommendations"]) >= 5
+
+
 class TestHealthEndpoint:
     def test_returns_all_keys(self):
         resp = client.get("/health")
