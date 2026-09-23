@@ -3,6 +3,7 @@
     {
       "name": "AI SaaS Startup (Baseline)",
       "scenario": {
+        "schema_version": 2,
         "business_domain": "AI",
         "company_size": "STARTUP",
         "expected_users": 10000000,
@@ -26,12 +27,19 @@
         "real_time_processing_required": true,
         "sensitive_data": true,
         "encryption_required": true,
-        "compliance_requirements": ["NONE"]
+        "compliance_requirements": ["NONE"],
+        "rto_hours": 1.0,
+        "rpo_hours": 0.25,
+        "backup_frequency_per_week": 14,
+        "realtime_required": true,
+        "ml_required": true,
+        "streaming_required": true
       }
     },
     {
       "name": "Healthcare Platform",
       "scenario": {
+        "schema_version": 2,
         "business_domain": "HEALTHCARE",
         "company_size": "MEDIUM",
         "expected_users": 500000,
@@ -55,12 +63,19 @@
         "real_time_processing_required": false,
         "sensitive_data": true,
         "encryption_required": true,
-        "compliance_requirements": ["HIPAA", "SOC2"]
+        "compliance_requirements": ["HIPAA", "SOC2"],
+        "rto_hours": 0.5,
+        "rpo_hours": 0.083,
+        "backup_frequency_per_week": 28,
+        "realtime_required": false,
+        "ml_required": false,
+        "streaming_required": false
       }
     },
     {
       "name": "E-Commerce Platform",
       "scenario": {
+        "schema_version": 2,
         "business_domain": "ECOMMERCE",
         "company_size": "SMALL",
         "expected_users": 2000000,
@@ -84,12 +99,19 @@
         "real_time_processing_required": true,
         "sensitive_data": true,
         "encryption_required": true,
-        "compliance_requirements": ["PCI_DSS", "GDPR"]
+        "compliance_requirements": ["PCI_DSS", "GDPR"],
+        "rto_hours": 0.25,
+        "rpo_hours": 0.083,
+        "backup_frequency_per_week": 21,
+        "realtime_required": true,
+        "ml_required": false,
+        "streaming_required": true
       }
     },
     {
       "name": "IoT Sensor Network",
       "scenario": {
+        "schema_version": 2,
         "business_domain": "IOT",
         "company_size": "STARTUP",
         "expected_users": 50000,
@@ -113,12 +135,19 @@
         "real_time_processing_required": true,
         "sensitive_data": false,
         "encryption_required": false,
-        "compliance_requirements": ["NONE"]
+        "compliance_requirements": ["NONE"],
+        "rto_hours": 2.0,
+        "rpo_hours": 0.5,
+        "backup_frequency_per_week": 7,
+        "realtime_required": true,
+        "ml_required": false,
+        "streaming_required": true
       }
     },
     {
       "name": "Media Streaming Platform",
       "scenario": {
+        "schema_version": 2,
         "business_domain": "MEDIA",
         "company_size": "MEDIUM",
         "expected_users": 5000000,
@@ -142,12 +171,19 @@
         "real_time_processing_required": false,
         "sensitive_data": false,
         "encryption_required": false,
-        "compliance_requirements": ["NONE"]
+        "compliance_requirements": ["NONE"],
+        "rto_hours": 1.0,
+        "rpo_hours": 0.5,
+        "backup_frequency_per_week": 7,
+        "realtime_required": false,
+        "ml_required": false,
+        "streaming_required": true
       }
     },
     {
       "name": "Financial Trading Platform",
       "scenario": {
+        "schema_version": 2,
         "business_domain": "FINTECH",
         "company_size": "LARGE",
         "expected_users": 1000000,
@@ -171,7 +207,13 @@
         "real_time_processing_required": true,
         "sensitive_data": true,
         "encryption_required": true,
-        "compliance_requirements": ["PCI_DSS", "SOC2"]
+        "compliance_requirements": ["PCI_DSS", "SOC2"],
+        "rto_hours": 0.083,
+        "rpo_hours": 0.017,
+        "backup_frequency_per_week": 42,
+        "realtime_required": true,
+        "ml_required": false,
+        "streaming_required": false
       }
     }
   ]

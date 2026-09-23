@@ -1,5 +1,8 @@
 """Tests for the Scenario domain model — validation, normalization, and edge cases."""
 
+import json
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
@@ -12,6 +15,7 @@ from storage_advisor.domain.scenario import (
     DataType,
     Intensity,
     Scenario,
+    upconvert_v1,
 )
 
 
@@ -243,3 +247,154 @@ class TestJsonSerialization:
         data = s.model_dump()
         assert isinstance(data["business_domain"], str)
         assert data["business_domain"] == "AI"
+
+
+class TestSchemaV2Fields:
+    """V2 optional fields and backward compatibility."""
+
+    def test_v1_payload_accepted_without_new_fields(self):
+        s = _valid_scenario()
+        assert s.schema_version == 1
+        assert s.rto_hours is None
+        assert s.rpo_hours is None
+        assert s.backup_frequency_per_week is None
+        assert s.realtime_required is False
+        assert s.ml_required is False
+        assert s.streaming_required is False
+
+    def test_v2_payload_with_all_new_fields(self):
+        s = _valid_scenario(
+            schema_version=2,
+            rto_hours=1.0,
+            rpo_hours=0.25,
+            backup_frequency_per_week=14,
+            realtime_required=True,
+            ml_required=True,
+            streaming_required=True,
+        )
+        assert s.schema_version == 2
+        assert s.rto_hours == 1.0
+        assert s.rpo_hours == 0.25
+        assert s.backup_frequency_per_week == 14
+        assert s.realtime_required is True
+        assert s.ml_required is True
+        assert s.streaming_required is True
+
+    def test_v2_partial_fields(self):
+        s = _valid_scenario(schema_version=2, ml_required=True)
+        assert s.ml_required is True
+        assert s.rto_hours is None
+        assert s.streaming_required is False
+
+    def test_v1_round_trip_preserves_defaults(self):
+        s = _valid_scenario()
+        data = s.model_dump()
+        s2 = Scenario(**data)
+        assert s2.schema_version == 1
+        assert s2.rto_hours is None
+        assert s2.ml_required is False
+
+
+class TestUpconvertV1:
+    """upconvert_v1 stamps schema_version=2 and fills defaults."""
+
+    def _v1_payload(self, **overrides) -> dict:
+        base = dict(
+            business_domain="AI",
+            company_size="STARTUP",
+            expected_users=1000,
+            concurrent_users=100,
+            current_storage_gb=100.0,
+            daily_growth_gb=1.0,
+            data_types=["TEXT"],
+            structured_data_pct=100.0,
+            semi_structured_data_pct=0.0,
+            unstructured_data_pct=0.0,
+            read_intensity="MEDIUM",
+            write_intensity="MEDIUM",
+            access_pattern="MIXED",
+            latency_requirement_ms=500.0,
+            availability_requirement=99.0,
+            rto_minutes=60.0,
+            rpo_minutes=30.0,
+            retention_years=1.0,
+            budget_level="MEDIUM",
+            analytics_required=False,
+            real_time_processing_required=False,
+            sensitive_data=False,
+            encryption_required=False,
+            compliance_requirements=["NONE"],
+        )
+        base.update(overrides)
+        return base
+
+    def test_stamps_version_2(self):
+        result = upconvert_v1(self._v1_payload())
+        assert result["schema_version"] == 2
+
+    def test_derives_rto_rpo_hours(self):
+        result = upconvert_v1(self._v1_payload(rto_minutes=120.0, rpo_minutes=30.0))
+        assert result["rto_hours"] == 2.0
+        assert result["rpo_hours"] == 0.5
+
+    def test_defaults_for_missing_fields(self):
+        result = upconvert_v1(self._v1_payload())
+        assert result["backup_frequency_per_week"] is None
+        assert result["realtime_required"] is False
+        assert result["ml_required"] is False
+        assert result["streaming_required"] is False
+
+    def test_does_not_overwrite_existing_rto_hours(self):
+        result = upconvert_v1(self._v1_payload(rto_hours=5.0, rto_minutes=60.0))
+        assert result["rto_hours"] == 5.0
+
+    def test_v2_payload_passes_through(self):
+        payload = self._v1_payload(schema_version=2, ml_required=True)
+        result = upconvert_v1(payload)
+        assert result["schema_version"] == 2
+        assert result["ml_required"] is True
+        assert "streaming_required" not in result or result.get("streaming_required") is not None
+
+    def test_upconvert_then_validate(self):
+        v1 = self._v1_payload()
+        v2 = upconvert_v1(v1)
+        s = Scenario(**v2)
+        assert s.schema_version == 2
+        assert s.rto_hours == 1.0
+        assert s.rpo_hours == 0.5
+
+    def test_original_payload_not_mutated(self):
+        v1 = self._v1_payload()
+        original_keys = set(v1.keys())
+        upconvert_v1(v1)
+        assert set(v1.keys()) == original_keys
+
+
+class TestPresetScenarioValidity:
+    """All preset scenarios in examples/sample_scenarios.json are valid v2 payloads."""
+
+    @pytest.fixture()
+    def presets(self) -> list[dict]:
+        path = Path(__file__).resolve().parents[1] / "examples" / "sample_scenarios.json"
+        data = json.loads(path.read_text())
+        return [entry["scenario"] for entry in data["scenarios"]]
+
+    def test_all_presets_valid(self, presets: list[dict]):
+        for i, payload in enumerate(presets):
+            s = Scenario(**payload)
+            assert s.schema_version == 2, f"Preset {i} should be schema v2"
+
+    def test_presets_have_v2_fields(self, presets: list[dict]):
+        for payload in presets:
+            assert "rto_hours" in payload
+            assert "rpo_hours" in payload
+            assert "ml_required" in payload
+            assert "streaming_required" in payload
+
+    def test_ai_preset_has_ml_required(self, presets: list[dict]):
+        ai = next(p for p in presets if p["business_domain"] == "AI")
+        assert ai["ml_required"] is True
+
+    def test_fintech_preset_has_realtime(self, presets: list[dict]):
+        fintech = next(p for p in presets if p["business_domain"] == "FINTECH")
+        assert fintech["realtime_required"] is True

@@ -128,9 +128,16 @@ class Scenario(BaseModel):
 
     Every field is validated on construction. Enum fields accept
     case-insensitive strings (e.g. "high", "High", "HIGH" all become HIGH).
+
+    Schema v2 adds optional fields (rto_hours, rpo_hours,
+    backup_frequency_per_week, realtime_required, ml_required,
+    streaming_required). V1 payloads are accepted unchanged.
     """
 
     model_config = {"str_strip_whitespace": True, "use_enum_values": True}
+
+    # -- Schema version ----------------------------------------------------
+    schema_version: int = 1
 
     # -- Business ----------------------------------------------------------
     business_domain: Annotated[BusinessDomain, BeforeValidator(_normalize_enum_value)]
@@ -174,6 +181,14 @@ class Scenario(BaseModel):
     encryption_required: bool
     compliance_requirements: Annotated[list[Annotated[ComplianceType, BeforeValidator(_normalize_enum_value)]], BeforeValidator(_normalize_enum_list)]
 
+    # -- Schema v2 optional fields -----------------------------------------
+    rto_hours: float | None = None
+    rpo_hours: float | None = None
+    backup_frequency_per_week: int | None = None
+    realtime_required: bool = False
+    ml_required: bool = False
+    streaming_required: bool = False
+
     # -- Cross-field validators --------------------------------------------
 
     @model_validator(mode="after")
@@ -200,3 +215,30 @@ class Scenario(BaseModel):
                 f"unstructured={self.unstructured_data_pct}"
             )
         return self
+
+
+def upconvert_v1(payload: dict) -> dict:
+    """Upconvert a v1 scenario payload to v2, applying defaults.
+
+    V1 payloads lack schema_version and the v2 optional fields.
+    This function fills in defaults and stamps schema_version=2.
+    Already-v2 payloads pass through unchanged.
+    """
+    result = dict(payload)
+    version = result.get("schema_version", 1)
+    if version >= 2:
+        return result
+
+    result["schema_version"] = 2
+
+    if result.get("rto_hours") is None and "rto_minutes" in result:
+        result["rto_hours"] = result["rto_minutes"] / 60.0
+    if result.get("rpo_hours") is None and "rpo_minutes" in result:
+        result["rpo_hours"] = result["rpo_minutes"] / 60.0
+
+    result.setdefault("backup_frequency_per_week", None)
+    result.setdefault("realtime_required", False)
+    result.setdefault("ml_required", False)
+    result.setdefault("streaming_required", False)
+
+    return result
