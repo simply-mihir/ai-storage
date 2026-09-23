@@ -166,3 +166,146 @@ class TestProblemEvidence:
         )
         assert growth_problem.evidence["daily_growth_gb"] == 300
         assert "daily_growth_gb" in growth_problem.source_fields
+
+
+class TestSecurityExposureDetector:
+    def test_high_with_compliance(self):
+        ids = _problem_ids(_scenario(
+            data_types=["TRANSACTIONS"], compliance_requirements=["HIPAA"],
+        ))
+        assert ProblemId.SECURITY_EXPOSURE in ids
+
+    def test_high_with_three_sensitive_types(self):
+        s = _scenario(
+            data_types=["TRANSACTIONS", "DOCUMENTS", "EMBEDDINGS"],
+            structured_data_pct=50.0, semi_structured_data_pct=30.0,
+            unstructured_data_pct=20.0,
+        )
+        profile = profile_workload(s)
+        problems = detect_problems(s, profile)
+        sec = next(p for p in problems if p.problem_id == ProblemId.SECURITY_EXPOSURE)
+        assert sec.severity == ProblemSeverity.HIGH
+
+    def test_medium_with_two_sensitive_types(self):
+        s = _scenario(
+            data_types=["TRANSACTIONS", "DOCUMENTS"],
+            structured_data_pct=60.0, semi_structured_data_pct=20.0,
+            unstructured_data_pct=20.0,
+        )
+        profile = profile_workload(s)
+        problems = detect_problems(s, profile)
+        sec = next(p for p in problems if p.problem_id == ProblemId.SECURITY_EXPOSURE)
+        assert sec.severity == ProblemSeverity.MEDIUM
+
+    def test_medium_with_one_sensitive_and_long_retention(self):
+        ids = _problem_ids(_scenario(
+            data_types=["TRANSACTIONS"], retention_years=5,
+        ))
+        assert ProblemId.SECURITY_EXPOSURE in ids
+
+    def test_no_emit_one_sensitive_short_retention(self):
+        ids = _problem_ids(_scenario(
+            data_types=["TRANSACTIONS"], retention_years=0.5,
+        ))
+        assert ProblemId.SECURITY_EXPOSURE not in ids
+
+    def test_no_emit_no_sensitive_types(self):
+        ids = _problem_ids(_scenario(data_types=["TEXT"]))
+        assert ProblemId.SECURITY_EXPOSURE not in ids
+
+
+class TestCostOverrunRiskDetector:
+    def test_high_extreme_growth_constrained(self):
+        s = _scenario(daily_growth_gb=3000, budget_level="LOW")
+        profile = profile_workload(s)
+        problems = detect_problems(s, profile)
+        cost = next(p for p in problems if p.problem_id == ProblemId.COST_OVERRUN_RISK)
+        assert cost.severity == ProblemSeverity.HIGH
+
+    def test_medium_high_growth_constrained(self):
+        s = _scenario(daily_growth_gb=1000, budget_level="MEDIUM")
+        profile = profile_workload(s)
+        problems = detect_problems(s, profile)
+        cost = next(p for p in problems if p.problem_id == ProblemId.COST_OVERRUN_RISK)
+        assert cost.severity == ProblemSeverity.MEDIUM
+
+    def test_medium_extreme_growth_unconstrained(self):
+        s = _scenario(daily_growth_gb=3000, budget_level="HIGH")
+        profile = profile_workload(s)
+        problems = detect_problems(s, profile)
+        cost = next(p for p in problems if p.problem_id == ProblemId.COST_OVERRUN_RISK)
+        assert cost.severity == ProblemSeverity.MEDIUM
+
+    def test_no_emit_moderate_growth(self):
+        ids = _problem_ids(_scenario(daily_growth_gb=300, budget_level="LOW"))
+        assert ProblemId.COST_OVERRUN_RISK not in ids
+
+    def test_no_emit_high_growth_unconstrained(self):
+        ids = _problem_ids(_scenario(daily_growth_gb=1000, budget_level="HIGH"))
+        assert ProblemId.COST_OVERRUN_RISK not in ids
+
+
+class TestQueryPerformanceDegradationDetector:
+    def test_high_with_transactions(self):
+        s = _scenario(
+            read_intensity="HIGH", latency_requirement_ms=50,
+            data_types=["TRANSACTIONS"],
+        )
+        profile = profile_workload(s)
+        problems = detect_problems(s, profile)
+        qpd = next(p for p in problems if p.problem_id == ProblemId.QUERY_PERFORMANCE_DEGRADATION)
+        assert qpd.severity == ProblemSeverity.HIGH
+
+    def test_medium_without_transactions(self):
+        s = _scenario(
+            read_intensity="HIGH", latency_requirement_ms=50,
+            data_types=["TEXT"],
+        )
+        profile = profile_workload(s)
+        problems = detect_problems(s, profile)
+        qpd = next(p for p in problems if p.problem_id == ProblemId.QUERY_PERFORMANCE_DEGRADATION)
+        assert qpd.severity == ProblemSeverity.MEDIUM
+
+    def test_no_emit_relaxed_latency(self):
+        ids = _problem_ids(_scenario(
+            read_intensity="HIGH", latency_requirement_ms=1000,
+        ))
+        assert ProblemId.QUERY_PERFORMANCE_DEGRADATION not in ids
+
+    def test_no_emit_low_read_pressure(self):
+        ids = _problem_ids(_scenario(
+            read_intensity="LOW", latency_requirement_ms=50,
+        ))
+        assert ProblemId.QUERY_PERFORMANCE_DEGRADATION not in ids
+
+
+class TestMaintenanceBurdenDetector:
+    def test_high_all_three_signals(self):
+        s = _scenario(
+            latency_requirement_ms=10, write_intensity="HIGH", daily_growth_gb=1000,
+        )
+        profile = profile_workload(s)
+        problems = detect_problems(s, profile)
+        mb = next(p for p in problems if p.problem_id == ProblemId.MAINTENANCE_BURDEN)
+        assert mb.severity == ProblemSeverity.HIGH
+
+    def test_medium_two_of_three(self):
+        s = _scenario(
+            latency_requirement_ms=10, write_intensity="HIGH", daily_growth_gb=1,
+        )
+        profile = profile_workload(s)
+        problems = detect_problems(s, profile)
+        mb = next(p for p in problems if p.problem_id == ProblemId.MAINTENANCE_BURDEN)
+        assert mb.severity == ProblemSeverity.MEDIUM
+
+    def test_no_emit_one_signal(self):
+        ids = _problem_ids(_scenario(
+            latency_requirement_ms=10, write_intensity="LOW", daily_growth_gb=1,
+        ))
+        assert ProblemId.MAINTENANCE_BURDEN not in ids
+
+    def test_no_emit_zero_signals(self):
+        ids = _problem_ids(_scenario(
+            latency_requirement_ms=1000, write_intensity="LOW", daily_growth_gb=1,
+        ))
+        assert ProblemId.MAINTENANCE_BURDEN not in ids

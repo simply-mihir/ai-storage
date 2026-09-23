@@ -334,6 +334,157 @@ def _detect_scalability_pressure(
 
 
 # ---------------------------------------------------------------------------
+# Lesson 3 detectors — each emits only when severity >= MEDIUM
+# ---------------------------------------------------------------------------
+
+_SENSITIVE_DATA_TYPES = frozenset({
+    DataType.TRANSACTIONS,
+    DataType.DOCUMENTS,
+    DataType.EMBEDDINGS,
+})
+
+
+def _detect_security_exposure(
+    profile: WorkloadProfile, scenario: Scenario,
+) -> DetectedProblem | None:
+    """Detect data-security exposure from sensitive data types."""
+    sensitive = [dt for dt in scenario.data_types if dt in _SENSITIVE_DATA_TYPES]
+    n = len(sensitive)
+    if n == 0:
+        return None
+
+    if profile.compliance_pressure == CompliancePresence.PRESENT or n >= 3:
+        severity = ProblemSeverity.HIGH
+    elif n >= 2 or (n == 1 and profile.retention_class == RetentionClass.LONG_TERM):
+        severity = ProblemSeverity.MEDIUM
+    else:
+        return None
+
+    return DetectedProblem(
+        problem_id=ProblemId.SECURITY_EXPOSURE,
+        name="Security Exposure",
+        severity=severity,
+        description=(
+            "Sensitive data types combined with compliance or retention "
+            "requirements create security exposure requiring encryption, "
+            "access controls, and audit logging."
+        ),
+        evidence={
+            "sensitive_data_types": sensitive,
+            "compliance_pressure": str(profile.compliance_pressure),
+            "retention_class": str(profile.retention_class),
+        },
+        source_fields=["data_types", "compliance_requirements", "retention_years"],
+    )
+
+
+def _detect_cost_overrun_risk(
+    profile: WorkloadProfile, scenario: Scenario,
+) -> DetectedProblem | None:
+    """Detect cost-overrun risk from growth vs. budget mismatch."""
+    constrained = scenario.budget_level in ("LOW", "MEDIUM")
+    growth = profile.storage_growth
+
+    if growth == GrowthClass.EXTREME and constrained:
+        severity = ProblemSeverity.HIGH
+    elif (growth == GrowthClass.HIGH and constrained) or (
+        growth == GrowthClass.EXTREME and not constrained
+    ):
+        severity = ProblemSeverity.MEDIUM
+    else:
+        return None
+
+    return DetectedProblem(
+        problem_id=ProblemId.COST_OVERRUN_RISK,
+        name="Cost Overrun Risk",
+        severity=severity,
+        description=(
+            "Rapid storage growth against a constrained budget creates "
+            "risk of cost overruns without lifecycle management and "
+            "tiered storage strategies."
+        ),
+        evidence={
+            "storage_growth": str(growth),
+            "budget_level": scenario.budget_level,
+        },
+        source_fields=["daily_growth_gb", "budget_level"],
+    )
+
+
+def _detect_query_performance_degradation(
+    profile: WorkloadProfile, scenario: Scenario,
+) -> DetectedProblem | None:
+    """Detect query-performance degradation from read pressure and latency."""
+    if profile.read_pressure != PressureLevel.HIGH:
+        return None
+    if profile.latency_class not in (
+        LatencyClass.LOW_LATENCY,
+        LatencyClass.ULTRA_LOW_LATENCY,
+    ):
+        return None
+
+    has_transactions = DataType.TRANSACTIONS in scenario.data_types
+    if has_transactions:
+        severity = ProblemSeverity.HIGH
+    else:
+        severity = ProblemSeverity.MEDIUM
+
+    return DetectedProblem(
+        problem_id=ProblemId.QUERY_PERFORMANCE_DEGRADATION,
+        name="Query Performance Degradation",
+        severity=severity,
+        description=(
+            "High read pressure combined with strict latency requirements "
+            "risks query-performance degradation as data grows, requiring "
+            "indexing, partitioning, and caching strategies."
+        ),
+        evidence={
+            "read_pressure": str(profile.read_pressure),
+            "latency_class": str(profile.latency_class),
+            "has_transactions": has_transactions,
+        },
+        source_fields=["read_intensity", "latency_requirement_ms", "data_types"],
+    )
+
+
+def _detect_maintenance_burden(
+    profile: WorkloadProfile, scenario: Scenario,
+) -> DetectedProblem | None:
+    """Detect maintenance burden from combined infrastructure stress."""
+    signals = 0
+    if profile.latency_class == LatencyClass.ULTRA_LOW_LATENCY:
+        signals += 1
+    if profile.write_pressure == PressureLevel.HIGH:
+        signals += 1
+    if profile.storage_growth in (GrowthClass.HIGH, GrowthClass.EXTREME):
+        signals += 1
+
+    if signals == 3:
+        severity = ProblemSeverity.HIGH
+    elif signals == 2:
+        severity = ProblemSeverity.MEDIUM
+    else:
+        return None
+
+    return DetectedProblem(
+        problem_id=ProblemId.MAINTENANCE_BURDEN,
+        name="Maintenance Burden",
+        severity=severity,
+        description=(
+            "Ultra-low latency, high write pressure, and rapid growth "
+            "combine to create a heavy operational maintenance burden "
+            "requiring lifecycle automation and tiered storage."
+        ),
+        evidence={
+            "latency_class": str(profile.latency_class),
+            "write_pressure": str(profile.write_pressure),
+            "storage_growth": str(profile.storage_growth),
+        },
+        source_fields=["latency_requirement_ms", "write_intensity", "daily_growth_gb"],
+    )
+
+
+# ---------------------------------------------------------------------------
 # All detectors in evaluation order
 # ---------------------------------------------------------------------------
 
@@ -350,6 +501,10 @@ _DETECTORS = [
     _detect_disaster_recovery,
     _detect_compliance,
     _detect_scalability_pressure,
+    _detect_security_exposure,
+    _detect_cost_overrun_risk,
+    _detect_query_performance_degradation,
+    _detect_maintenance_burden,
 ]
 
 
