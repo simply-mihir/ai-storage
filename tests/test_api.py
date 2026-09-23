@@ -152,3 +152,74 @@ class TestInsightsEndpoint:
         assert "catalog" in data
         for key in ("treemap", "industry_heatmap", "correlation", "bubble", "graph"):
             assert key in data["figures"]
+
+
+class TestSecondOpinionEndpoint:
+    def test_second_opinion_contract_wrapped_scenario(self):
+        resp = client.post("/api/v1/second-opinion", json={"scenario": DEMO_SCENARIO})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "agreement_pct" in data
+        assert isinstance(data["agreement_pct"], (int, float))
+        assert 0.0 <= data["agreement_pct"] <= 100.0
+
+        assert "ml_adds" in data
+        assert isinstance(data["ml_adds"], list)
+        assert "ml_drops" in data
+        assert isinstance(data["ml_drops"], list)
+
+        assert "reasons" in data
+        assert isinstance(data["reasons"], dict)
+        assert "divergences" in data
+        assert isinstance(data["divergences"], list)
+
+        for div in data["divergences"]:
+            assert "technique_id" in div
+            assert div["type"] in ("add", "drop")
+            assert "reason" in div
+            assert "Driven by" in div["reason"]
+            assert div["technique_id"] in data["reasons"]
+
+    def test_second_opinion_contract_direct_scenario(self):
+        resp = client.post("/api/v1/second-opinion", json=DEMO_SCENARIO)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "agreement_pct" in data
+        assert isinstance(data["ml_adds"], list)
+        assert isinstance(data["ml_drops"], list)
+
+    def test_determinism_at_fixed_seed(self):
+        resp1 = client.post("/api/v1/second-opinion", json={"scenario": V2_SCENARIO})
+        resp2 = client.post("/api/v1/second-opinion", json={"scenario": V2_SCENARIO})
+        assert resp1.status_code == 200
+        assert resp2.status_code == 200
+        data1 = resp1.json()
+        data2 = resp2.json()
+        assert data1["agreement_pct"] == data2["agreement_pct"]
+        assert data1["ml_adds"] == data2["ml_adds"]
+        assert data1["ml_drops"] == data2["ml_drops"]
+        assert data1["reasons"] == data2["reasons"]
+
+    def test_invalid_scenario_returns_400(self):
+        bad = {**DEMO_SCENARIO, "expected_users": -99}
+        resp = client.post("/api/v1/second-opinion", json={"scenario": bad})
+        assert resp.status_code == 400
+        assert "error" in resp.json()
+
+    def test_engine_authority_untouched(self):
+        from storage_advisor.domain.scenario import Scenario
+        from storage_advisor.knowledge.technique_catalog import load_techniques
+        from storage_advisor.recommendation.recommendation_engine import (
+            run_recommendation_engine,
+        )
+
+        scenario = Scenario(**DEMO_SCENARIO)
+        pure_engine_result = run_recommendation_engine(scenario, load_techniques())
+        pure_ids = [r.technique_id for r in pure_engine_result.recommendations]
+
+        resp = client.post("/api/v1/second-opinion", json={"scenario": DEMO_SCENARIO})
+        data = resp.json()
+        assert data["engine_authority"] is True
+        assert data["role"] == "advisory"
+        assert data["engine_recommendations"] == pure_ids
+

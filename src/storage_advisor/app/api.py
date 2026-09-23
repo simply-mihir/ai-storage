@@ -25,6 +25,7 @@ from storage_advisor.estimation.impact_estimator import estimate_impact
 from storage_advisor.integrations.bedrock import BedrockExplainer
 from storage_advisor.integrations.pricing import AWSPricingClient
 from storage_advisor.knowledge.technique_catalog import load_techniques
+from storage_advisor.ml.second_opinion import predict_second_opinion
 from storage_advisor.profiling.workload_profiler import profile_workload
 from storage_advisor.recommendation.recommendation_engine import (
     run_recommendation_engine,
@@ -118,6 +119,10 @@ class TrajectoryRequest(BaseModel):
 class TerraformRequest(BaseModel):
     scenario: dict[str, Any]
     architecture: dict[str, Any] = Field(default_factory=dict)
+
+
+class SecondOpinionRequest(BaseModel):
+    scenario: dict[str, Any] = Field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -284,6 +289,78 @@ async def what_if(body: WhatIfRequest):
         "cost_delta_pct": result.cost_delta_pct,
         "latency_delta_pct": result.latency_delta_pct,
         "summary": result.summary,
+    }
+
+
+@app.post("/api/v1/second-opinion")
+async def get_second_opinion(request: Request):
+    """Run engine recommendations and ML second-opinion advice for the submitted scenario.
+
+    NOTE: The rule-based engine is the sole AUTHORITY; ML only advises.
+    Disagreements flag cases for human review and never override recommendations.
+    """
+    try:
+        body = await request.json()
+        if not isinstance(body, dict):
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Request body must be a JSON object"},
+            )
+        scenario_dict = (
+            body.get("scenario", body)
+            if ("scenario" in body and isinstance(body["scenario"], dict) and len(body["scenario"]) > 0)
+            else body
+        )
+        scenario = Scenario(**upconvert_v1(scenario_dict))
+    except (ValidationError, ValueError, KeyError, TypeError) as e:
+        return JSONResponse(
+            status_code=400,
+            content={"error": f"Invalid scenario: {e}"},
+        )
+
+    # 1. Run deterministic recommendation engine (THE AUTHORITY)
+    engine_result = run_recommendation_engine(scenario, _techniques)
+    engine_rec_ids = [r.technique_id for r in engine_result.recommendations]
+    engine_set = set(engine_rec_ids)
+
+    # 2. Run ML second-opinion distillation prediction (ADVISORY ONLY)
+    ml_result = predict_second_opinion(scenario)
+    ml_rec_ids = ml_result["ml_recommendations"]
+    ml_set = set(ml_rec_ids)
+    all_reasons = ml_result.get("driver_reasons", {})
+
+    # 3. Compute divergence metrics
+    union_set = engine_set | ml_set
+    intersection_set = engine_set & ml_set
+    agreement_pct = round((len(intersection_set) / max(len(union_set), 1)) * 100.0, 1)
+
+    ml_adds = sorted(list(ml_set - engine_set))
+    ml_drops = sorted(list(engine_set - ml_set))
+
+    # Top-2 driver features as one-line reasons per divergence
+    reasons: dict[str, str] = {}
+    divergences: list[dict[str, str]] = []
+    for tid in ml_adds:
+        reason_line = all_reasons.get(tid, "Driven by workload profile characteristics")
+        reasons[tid] = reason_line
+        divergences.append({"technique_id": tid, "type": "add", "reason": reason_line})
+
+    for tid in ml_drops:
+        reason_line = all_reasons.get(tid, "Driven by workload profile characteristics")
+        reasons[tid] = reason_line
+        divergences.append({"technique_id": tid, "type": "drop", "reason": reason_line})
+
+    return {
+        "agreement_pct": agreement_pct,
+        "ml_adds": ml_adds,
+        "ml_drops": ml_drops,
+        "reasons": reasons,
+        "driver_reasons": reasons,
+        "divergences": divergences,
+        "engine_recommendations": engine_rec_ids,
+        "ml_recommendations": ml_rec_ids,
+        "engine_authority": True,
+        "role": "advisory",
     }
 
 
