@@ -91,6 +91,9 @@ variants:
       storage_growth: [HIGH, EXTREME]
     conflicts_with:
       - caching.write_behind
+      # VARIANT SCOPE: feature-detecting masking on media (face/plate blurring)
+      # degrades on lossy compression artifacts; no tension exists for
+      # structured column masking (static or dynamic).
       - masking
     impacts:
       storage: 5

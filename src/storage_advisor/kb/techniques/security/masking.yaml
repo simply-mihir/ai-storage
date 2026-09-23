@@ -10,6 +10,8 @@ solves:
 synergies_with:
   - encryption
 conflicts_with:
+  # VARIANT SCOPE: only media masking (face/plate blurring) conflicts;
+  # structured column masking (static/dynamic) has no tension.
   - compression.lossy
 requires: []
 avoid_when:
