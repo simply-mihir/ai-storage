@@ -2557,6 +2557,22 @@
             <button class="circle-btn" id="rec-terraform-top-btn" aria-label="Download Terraform" title="Download Terraform Architecture Blueprint">
               <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
+
+            <!-- Export Report Pill -->
+            <div style="position: relative; display: inline-block;">
+              <button class="pill pill-accent" id="export-report-btn" aria-label="Export Report" title="Export Consultant Report" style="cursor: pointer; border: none;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Export Report
+              </button>
+              <div id="export-report-dropdown" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 6px; background: var(--bg2); border-radius: var(--radius); box-shadow: var(--shadow-raised); z-index: 100; min-width: 160px; overflow: hidden;">
+                <button class="export-report-option" data-format="md" style="display: block; width: 100%; padding: 10px 16px; border: none; background: none; color: var(--text); font-size: 0.85rem; text-align: left; cursor: pointer;">
+                  Markdown (.md)
+                </button>
+                <button class="export-report-option" data-format="pdf" style="display: block; width: 100%; padding: 10px 16px; border: none; background: none; color: var(--text); font-size: 0.85rem; text-align: left; cursor: pointer; border-top: 1px solid var(--bg3);">
+                  PDF (.pdf)
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2996,6 +3012,25 @@
             </div>
           </div>
         </div>
+
+        <!-- Report Preview Inset Well -->
+        <div class="neu-inset" id="report-preview-well" style="margin-top: 20px; padding: 20px 24px; border-radius: var(--radius); display: none;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text); margin: 0;">Report Preview</h3>
+            <span id="report-preview-status" style="font-size: 0.75rem; color: var(--text3);"></span>
+          </div>
+
+          <div id="report-preview-summary" style="margin-bottom: 16px;">
+            <div style="font-size: 0.8rem; font-weight: 600; color: var(--text2); margin-bottom: 6px;">Executive Summary</div>
+            <p id="report-preview-exec" style="font-size: 0.85rem; color: var(--text); line-height: 1.5; margin: 0;">Loading...</p>
+          </div>
+
+          <div id="report-preview-roadmap">
+            <div style="font-size: 0.8rem; font-weight: 600; color: var(--text2); margin-bottom: 8px;">Implementation Roadmap</div>
+            <div id="report-roadmap-timeline" style="display: flex; flex-direction: column; gap: 6px;"></div>
+          </div>
+        </div>
+
       </section>
 
       <!-- ====================================================================
@@ -3425,6 +3460,22 @@
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 0.75rem; color: var(--text3);">Addressed by:</span>
                 <span class="pill delta-pill delta-green">S3 Object Lock Compliance</span>
+              </div>
+            </div>
+
+            <!-- Node 5 -->
+            <div class="timeline-item">
+              <div class="timeline-node-circle">5</div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                <strong style="color: var(--text); font-size: 0.95rem;">Security Exposure</strong>
+                <span class="priority-badge badge-high">High</span>
+              </div>
+              <p style="font-size: 0.85rem; color: var(--text2); margin-bottom: 8px;">
+                Evidence: Sensitive data types (TRANSACTIONS, DOCUMENTS) combined with compliance requirements create security exposure requiring encryption, access controls, and audit logging.
+              </p>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.75rem; color: var(--text3);">Addressed by:</span>
+                <span class="pill delta-pill" style="background: var(--bg3); color: var(--text3); border: 1px dashed var(--text3);">Advisory pending knowledge cutover</span>
               </div>
             </div>
           </div>
@@ -4717,6 +4768,125 @@ resource "aws_rds_cluster" "aurora_cluster" {
       document.getElementById('arch-analyze-btn')?.addEventListener('click', () => {
         switchTab('recommendations');
       });
+
+      // Export Report dropdown toggle
+      const exportBtn = document.getElementById('export-report-btn');
+      const exportDropdown = document.getElementById('export-report-dropdown');
+      if (exportBtn && exportDropdown) {
+        exportBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          exportDropdown.style.display = exportDropdown.style.display === 'none' ? 'block' : 'none';
+        });
+        document.addEventListener('click', () => { exportDropdown.style.display = 'none'; });
+        document.querySelectorAll('.export-report-option').forEach(opt => {
+          opt.addEventListener('click', async () => {
+            const fmt = opt.dataset.format;
+            exportDropdown.style.display = 'none';
+            try {
+              const controller = new AbortController();
+              const timeout = setTimeout(() => controller.abort(), 2500);
+              const resp = await fetch(`/api/v1/report/export?format=${fmt}`, {
+                headers: { 'X-API-Key': getApiKey() },
+                signal: controller.signal,
+              });
+              clearTimeout(timeout);
+              if (!resp.ok) throw new Error('Export failed');
+              const data = await resp.json();
+              let blob, filename;
+              if (fmt === 'pdf') {
+                const bytes = atob(data.data);
+                const arr = new Uint8Array(bytes.length);
+                for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+                blob = new Blob([arr], { type: 'application/pdf' });
+                filename = 'report.pdf';
+              } else {
+                blob = new Blob([data.data], { type: 'text/markdown' });
+                filename = 'report.md';
+              }
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url; a.download = filename;
+              document.body.appendChild(a); a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            } catch {
+              const mockMd = '# Report\n\nExport unavailable -- backend not running.\n';
+              const blob = new Blob([mockMd], { type: 'text/markdown' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url; a.download = 'report-mock.md';
+              document.body.appendChild(a); a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }
+          });
+        });
+      }
+
+      // Report Preview well -- load on first visit to Recommendations tab
+      async function loadReportPreview() {
+        const well = document.getElementById('report-preview-well');
+        if (!well || well.dataset.loaded === 'true') return;
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 2500);
+          const resp = await fetch('/api/v1/report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-API-Key': getApiKey() },
+            body: JSON.stringify({ scenario: {
+              business_domain: 'AI', company_size: 'ENTERPRISE',
+              expected_users: 10000000, concurrent_users: 100000,
+              current_storage_gb: 25000, daily_growth_gb: 300,
+              data_types: ['IMAGES','DOCUMENTS','TRANSACTIONS','LOGS'],
+              structured_data_pct: 20, semi_structured_data_pct: 20,
+              unstructured_data_pct: 60, read_intensity: 'HIGH',
+              write_intensity: 'HIGH', access_pattern: 'MIXED',
+              latency_requirement_ms: 100, availability_requirement: 99.99,
+              rto_minutes: 60, rpo_minutes: 15, retention_years: 7,
+              budget_level: 'HIGH', analytics_required: true,
+              real_time_processing_required: true, sensitive_data: true,
+              encryption_required: true, compliance_requirements: ['NONE']
+            }}),
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+          if (!resp.ok) throw new Error('Report load failed');
+          const data = await resp.json();
+          well.style.display = 'block';
+          well.dataset.loaded = 'true';
+          document.getElementById('report-preview-exec').textContent = data.executive_summary || '';
+          document.getElementById('report-preview-status').textContent = 'Live';
+
+          const timeline = document.getElementById('report-roadmap-timeline');
+          if (timeline && data.implementation_roadmap) {
+            timeline.innerHTML = '';
+            data.implementation_roadmap.forEach(step => {
+              const row = document.createElement('div');
+              row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--bg3);';
+              const phase = document.createElement('span');
+              phase.style.cssText = 'font-size:0.7rem;font-weight:700;color:var(--accent);min-width:50px;';
+              phase.textContent = step.phase_label;
+              const name = document.createElement('span');
+              name.style.cssText = 'font-size:0.82rem;color:var(--text);flex:1;';
+              name.textContent = step.technique_name;
+              const effort = document.createElement('span');
+              effort.className = 'delta-pill';
+              effort.style.cssText = 'font-size:0.7rem;';
+              effort.textContent = step.effort_estimate;
+              row.appendChild(phase);
+              row.appendChild(name);
+              row.appendChild(effort);
+              timeline.appendChild(row);
+            });
+          }
+        } catch {
+          well.style.display = 'block';
+          well.dataset.loaded = 'true';
+          document.getElementById('report-preview-exec').textContent = 'Report preview unavailable -- backend not running.';
+          document.getElementById('report-preview-status').textContent = 'Mock';
+        }
+      }
+      loadReportPreview();
 
       // Check Health and init Homepage Chart
       window.addEventListener('DOMContentLoaded', () => {
