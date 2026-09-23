@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 import traceback
@@ -10,7 +11,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -31,6 +32,7 @@ from storage_advisor.integrations.bedrock import BedrockExplainer
 from storage_advisor.integrations.pricing import AWSPricingClient
 from storage_advisor.knowledge.technique_catalog import load_techniques
 from storage_advisor.ml.second_opinion import predict_second_opinion
+from storage_advisor.observability.metrics import metrics_collector
 from storage_advisor.profiling.workload_profiler import profile_workload
 from storage_advisor.recommendation.recommendation_engine import (
     run_recommendation_engine,
@@ -155,9 +157,15 @@ app.add_middleware(
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
+    # 0. Request ID handling
+    request_id = request.headers.get("X-Request-ID") or str(uuid4())
+    request.state.request_id = request_id
+
     # 1. API key authentication & rate limiting for /api/v1/* routes
     auth_response = await authenticate_and_rate_limit(request)
     if auth_response is not None:
+        auth_response.headers["X-Request-ID"] = request_id
+        metrics_collector.record_request(request.url.path, request.method, auth_response.status_code)
         return auth_response
 
     start = time.perf_counter()
@@ -166,11 +174,17 @@ async def log_requests(request: Request, call_next):
     except Exception:  # noqa: BLE001
         correlation_id = str(uuid4())
         logger.error("Unhandled exception [%s]:\n%s", correlation_id, traceback.format_exc())
-        return JSONResponse(
+        resp = JSONResponse(
             status_code=500,
             content={"error": "Internal error", "correlation_id": correlation_id},
         )
+        resp.headers["X-Request-ID"] = request_id
+        metrics_collector.record_request(request.url.path, request.method, 500)
+        return resp
+
     elapsed_ms = (time.perf_counter() - start) * 1000
+    response.headers["X-Request-ID"] = request_id
+    metrics_collector.record_request(request.url.path, request.method, response.status_code)
     logger.info("%s %s → %d (%.1f ms)", request.method, request.url.path, response.status_code, elapsed_ms)
     return response
 
@@ -222,8 +236,9 @@ async def create_scenario(body: ScenarioRequest):
 
 
 @app.post("/api/v1/recommendations")
-async def get_recommendations(body: RecommendationRequest):
+async def get_recommendations(request: Request, body: RecommendationRequest):
     start = time.perf_counter()
+    request_id = getattr(request.state, "request_id", str(uuid4()))
 
     try:
         scenario = Scenario(**upconvert_v1(body.scenario))
@@ -235,11 +250,65 @@ async def get_recommendations(body: RecommendationRequest):
 
     scenario_id = body.scenario_id or str(uuid4())
 
+    # Stage 1: profiling
+    t0 = time.perf_counter()
     profile = profile_workload(scenario)
+    dur1 = (time.perf_counter() - t0) * 1000
+    metrics_collector.record_stage_duration("profiling", dur1 / 1000.0)
+    logger.info(json.dumps({
+        "timestamp": datetime.now(UTC).isoformat(),
+        "request_id": request_id,
+        "stage": "profiling",
+        "duration_ms": round(dur1, 3),
+    }))
+
+    # Stage 2: problem_detection
+    t0 = time.perf_counter()
     problems = detect_problems(scenario, profile)
+    dur2 = (time.perf_counter() - t0) * 1000
+    metrics_collector.record_stage_duration("problem_detection", dur2 / 1000.0)
+    logger.info(json.dumps({
+        "timestamp": datetime.now(UTC).isoformat(),
+        "request_id": request_id,
+        "stage": "problem_detection",
+        "duration_ms": round(dur2, 3),
+    }))
+
+    # Stage 3: recommendation_engine
+    t0 = time.perf_counter()
     result = run_recommendation_engine(scenario, _techniques)
+    dur3 = (time.perf_counter() - t0) * 1000
+    metrics_collector.record_stage_duration("recommendation_engine", dur3 / 1000.0)
+    logger.info(json.dumps({
+        "timestamp": datetime.now(UTC).isoformat(),
+        "request_id": request_id,
+        "stage": "recommendation_engine",
+        "duration_ms": round(dur3, 3),
+    }))
+
+    # Stage 4: impact_estimation
+    t0 = time.perf_counter()
     impact = estimate_impact(scenario, result.recommendations)
+    dur4 = (time.perf_counter() - t0) * 1000
+    metrics_collector.record_stage_duration("impact_estimation", dur4 / 1000.0)
+    logger.info(json.dumps({
+        "timestamp": datetime.now(UTC).isoformat(),
+        "request_id": request_id,
+        "stage": "impact_estimation",
+        "duration_ms": round(dur4, 3),
+    }))
+
+    # Stage 5: architecture_build
+    t0 = time.perf_counter()
     architecture = _builder.build(scenario, result)
+    dur5 = (time.perf_counter() - t0) * 1000
+    metrics_collector.record_stage_duration("architecture_build", dur5 / 1000.0)
+    logger.info(json.dumps({
+        "timestamp": datetime.now(UTC).isoformat(),
+        "request_id": request_id,
+        "stage": "architecture_build",
+        "duration_ms": round(dur5, 3),
+    }))
 
     elapsed = (time.perf_counter() - start) * 1000
     logger.info("Recommendation pipeline completed in %.1f ms", elapsed)
@@ -266,10 +335,12 @@ async def explain_recommendation(body: ExplainRequest):
             result = run_recommendation_engine(scenario, _techniques)
             impact = estimate_impact(scenario, result.recommendations)
             explanation = _explainer.explain(result, scenario, impact)
+            metrics_collector.record_ai_fallback_tier(explanation.source)
             return {"explanation": explanation.text, "source": explanation.source}
         except Exception as e:  # noqa: BLE001
             logger.warning("Bedrock explain path failed, falling back to structured: %s", e)
 
+    metrics_collector.record_ai_fallback_tier("structured_fallback")
     rec = body.recommendation
     parts = []
     if rec.get("rationale"):
@@ -625,6 +696,14 @@ if _STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
 
+@app.get("/metrics", include_in_schema=False)
+async def get_metrics():
+    return Response(
+        content=metrics_collector.export_prometheus_text(),
+        media_type="text/plain; version=0.0.4; charset=utf-8",
+    )
+
+
 @app.get("/health")
 async def health():
     try:
@@ -644,3 +723,4 @@ async def health():
             status_code=503,
             content={"status": "unhealthy", "error": "Engine initialization failed"},
         )
+
