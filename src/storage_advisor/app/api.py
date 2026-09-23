@@ -464,8 +464,13 @@ async def get_pricing(region: str = "us-east-1"):
     client = AWSPricingClient(region=region) if region != _pricing.region else _pricing
     return {
         "s3_per_gb": client.get_s3_price_per_gb(),
+        "s3_data_transfer_out_per_gb": client.get_s3_data_transfer_out_price_per_gb(),
+        "s3_request_put_per_1k": client.get_s3_request_price_per_thousand("PUT"),
+        "s3_request_get_per_1k": client.get_s3_request_price_per_thousand("GET"),
         "elasticache_per_hour": client.get_elasticache_price_per_hour(),
         "rds_per_hour": client.get_rds_price_per_hour(),
+        "rds_gp3_storage_single_az_per_gb": client.get_rds_gp3_storage_price_per_gb("Single-AZ"),
+        "rds_gp3_storage_multi_az_per_gb": client.get_rds_gp3_storage_price_per_gb("Multi-AZ"),
         "glacier_per_gb": client.get_glacier_price_per_gb(),
         "source": "aws_list_price",
         "region": region,

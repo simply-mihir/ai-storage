@@ -43,6 +43,39 @@ _RDS_FALLBACK = {
 
 _GLACIER_FALLBACK = 0.004
 
+# AWS S3 Data Transfer Out (Internet Egress) per GB
+# Source: https://aws.amazon.com/s3/pricing/
+# First 100 GB/month free across all AWS regions; standard regional egress rates apply thereafter.
+_S3_DATA_TRANSFER_OUT_FALLBACK: dict[str, float] = {
+    "us-east-1": 0.09,
+    "us-west-2": 0.09,
+    "eu-west-1": 0.09,
+    "ap-south-1": 0.109,
+}
+
+# AWS RDS gp3 Baseline Storage Pricing per GB-month
+# Source: https://aws.amazon.com/rds/postgresql/pricing/ & https://aws.amazon.com/rds/pricing/
+# gp3 storage includes baseline performance of 3,000 IOPS and 125 MB/s throughput at no additional cost.
+_RDS_GP3_STORAGE_FALLBACK: dict[tuple[str, str], float] = {
+    ("us-east-1", "Single-AZ"): 0.115,
+    ("us-east-1", "Multi-AZ"): 0.23,
+    ("us-west-2", "Single-AZ"): 0.115,
+    ("us-west-2", "Multi-AZ"): 0.23,
+    ("eu-west-1", "Single-AZ"): 0.132,
+    ("eu-west-1", "Multi-AZ"): 0.264,
+    ("ap-south-1", "Single-AZ"): 0.124,
+    ("ap-south-1", "Multi-AZ"): 0.248,
+}
+
+# AWS S3 API Request Pricing per 1,000 Requests
+# Source: https://aws.amazon.com/s3/pricing/
+# PUT, COPY, POST, LIST: $0.005 / 1,000 requests
+# GET, SELECT, and all other requests: $0.0004 / 1,000 requests
+_S3_REQUEST_PRICING: dict[str, float] = {
+    "PUT": 0.005,
+    "GET": 0.0004,
+}
+
 _CACHE_TTL_SECONDS = 86400  # 24 hours
 
 
@@ -211,6 +244,37 @@ class AWSPricingClient:
             self._cache_timestamp = time.monotonic()
         return price
 
+    def get_s3_data_transfer_out_price_per_gb(self) -> float:
+        """Return the per-GB internet egress cost for S3 data transfer out."""
+        cache_key = f"s3_dto_{self.region}"
+        if self._cache_valid() and cache_key in self._cache:
+            return self._cache[cache_key]
+
+        price = _S3_DATA_TRANSFER_OUT_FALLBACK.get(self.region, 0.09)
+        self._cache[cache_key] = price
+        if self._cache_timestamp is None:
+            self._cache_timestamp = time.monotonic()
+        return price
+
+    def get_rds_gp3_storage_price_per_gb(self, deployment: str = "Single-AZ") -> float:
+        """Return RDS gp3 baseline storage cost per GB-month (includes 3,000 IOPS & 125 MB/s)."""
+        cache_key = f"rds_gp3_{self.region}_{deployment}"
+        if self._cache_valid() and cache_key in self._cache:
+            return self._cache[cache_key]
+
+        price = _RDS_GP3_STORAGE_FALLBACK.get(
+            (self.region, deployment),
+            0.115 if deployment == "Single-AZ" else 0.23,
+        )
+        self._cache[cache_key] = price
+        if self._cache_timestamp is None:
+            self._cache_timestamp = time.monotonic()
+        return price
+
+    def get_s3_request_price_per_thousand(self, request_type: str = "GET") -> float:
+        """Return S3 API request price per 1,000 requests for PUT or GET."""
+        return _S3_REQUEST_PRICING.get(request_type.upper(), 0.0004)
+
     def calculate_monthly_architecture_cost(
         self,
         architecture,
@@ -240,6 +304,47 @@ class AWSPricingClient:
                     unit_price=unit_price,
                     unit="$/GB/month",
                     quantity=qty,
+                ))
+
+                # 1. S3 Data Transfer Out (per-GB regional constant table with source comment)
+                dto_unit_price = self.get_s3_data_transfer_out_price_per_gb()
+                read_mult = {"LOW": 0.10, "MEDIUM": 0.20, "HIGH": 0.35}.get(str(sc.read_intensity).upper(), 0.20)
+                dto_qty = round(max(sc.current_storage_gb * read_mult, 10.0), 1)
+                line_items.append(CostLineItem(
+                    component=comp.component_id,
+                    service="Amazon S3",
+                    label="S3 Data Transfer Out (Internet Egress)",
+                    monthly_cost_usd=round(dto_qty * dto_unit_price, 2),
+                    unit_price=dto_unit_price,
+                    unit="$/GB",
+                    quantity=dto_qty,
+                ))
+
+                # 2. S3 Request Pricing (PUT/GET per 1k)
+                put_unit_price = self.get_s3_request_price_per_thousand("PUT")
+                write_mult = {"LOW": 50, "MEDIUM": 200, "HIGH": 800}.get(str(sc.write_intensity).upper(), 200)
+                put_qty = round(max(sc.concurrent_users * write_mult / 1000.0, 10.0), 1)
+                line_items.append(CostLineItem(
+                    component=comp.component_id,
+                    service="Amazon S3",
+                    label="S3 Request Pricing (PUT/COPY/POST/LIST)",
+                    monthly_cost_usd=round(put_qty * put_unit_price, 2),
+                    unit_price=put_unit_price,
+                    unit="$/1k requests",
+                    quantity=put_qty,
+                ))
+
+                get_unit_price = self.get_s3_request_price_per_thousand("GET")
+                read_mult_req = {"LOW": 200, "MEDIUM": 1000, "HIGH": 5000}.get(str(sc.read_intensity).upper(), 1000)
+                get_qty = round(max(sc.concurrent_users * read_mult_req / 1000.0, 50.0), 1)
+                line_items.append(CostLineItem(
+                    component=comp.component_id,
+                    service="Amazon S3",
+                    label="S3 Request Pricing (GET/SELECT)",
+                    monthly_cost_usd=round(get_qty * get_unit_price, 2),
+                    unit_price=get_unit_price,
+                    unit="$/1k requests",
+                    quantity=get_qty,
                 ))
 
             elif ctype == "archive" or "glacier" in svc:
@@ -285,6 +390,19 @@ class AWSPricingClient:
                     quantity=hours_per_month,
                 ))
 
+                # 3. RDS gp3 Baseline Storage (3,000 IOPS and 125 MB/s included)
+                gp3_unit_price = self.get_rds_gp3_storage_price_per_gb(deployment=deployment)
+                rds_storage_gb = max(round(sc.current_storage_gb * (sc.structured_data_pct / 100.0), 1), 20.0)
+                line_items.append(CostLineItem(
+                    component=comp.component_id,
+                    service="Amazon RDS",
+                    label=f"RDS gp3 Storage ({deployment} - 3,000 IOPS, 125 MB/s included)",
+                    monthly_cost_usd=round(rds_storage_gb * gp3_unit_price, 2),
+                    unit_price=gp3_unit_price,
+                    unit="$/GB/month",
+                    quantity=rds_storage_gb,
+                ))
+
             elif ctype == "analytics_store" and "redshift" in svc:
                 unit_price = 0.25
                 line_items.append(CostLineItem(
@@ -306,8 +424,8 @@ class AWSPricingClient:
             pricing_date=date.today().isoformat(),
             source="aws_list_price",
             disclaimer=(
-                "Based on AWS public list prices. Actual costs depend on "
-                "usage patterns, reserved pricing, savings plans, and "
-                "data transfer. Excludes data transfer costs."
+                "Based on AWS public list prices. Includes S3 storage, S3 data transfer out, "
+                "S3 PUT/GET API requests, ElastiCache nodes, and RDS gp3 storage with baseline 3,000 IOPS & 125 MB/s."
             ),
         )
+

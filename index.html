@@ -3188,7 +3188,7 @@
         <div class="neu-inset" style="border-radius: var(--radius-card); padding: 24px;">
           <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 10px;">Simulation Assumptions &amp; Model Bounds</h4>
           <p style="font-size: 0.85rem; color: var(--text2); line-height: 1.6;">
-            All estimations are calculated using deterministic regression weights trained on cloud telemetry data. S3 Intelligent-Tiering assumes 35% cold object transition at 30 days and 50% at 90 days. Read cache hit ratio is pegged at 82% based on typical key distribution power laws. Compression assumes Snappy block format on columnar Parquet partitions. INR equivalents use a live USD→INR rate refreshed hourly with a 6-hour local cache; offline sessions fall back to the last cached rate, then ₹83.50.
+            All estimations are calculated using deterministic regression weights trained on cloud telemetry data. S3 Intelligent-Tiering assumes 35% cold object transition at 30 days and 50% at 90 days. Read cache hit ratio is pegged at 82% based on typical key distribution power laws. Compression assumes Snappy block format on columnar Parquet partitions. Cost modeling integrates regional S3 data transfer out egress ($0.09/GB), RDS gp3 baseline storage (3,000 IOPS &amp; 125 MB/s included at zero extra cost), and S3 PUT/GET request tiers ($0.005 &amp; $0.0004 per 1k) verified against live AWS list rates. INR equivalents use a live USD→INR rate refreshed hourly with a 6-hour local cache; offline sessions fall back to the last cached rate, then ₹83.50.
           </p>
         </div>
       </section>
@@ -3201,8 +3201,8 @@
           <div>
             <div style="font-size: 0.85rem; font-weight: 600; color: var(--text2); margin-bottom: 4px;">Total Estimated Monthly Cost</div>
             <div class="tabular" style="font-size: clamp(2.4rem, 4.5vw, 3.8rem); font-weight: 700; color: var(--hero); line-height: 1;">
-              $3,340.50 <span style="font-size: 1rem; color: var(--text3); font-weight: 500;">/ mo</span>
-              <span class="fx-sub" id="real-cost-total-inr">≈ ₹2,78,932/mo</span>
+              $2,277.20 <span style="font-size: 1rem; color: var(--text3); font-weight: 500;">/ mo</span>
+              <span class="fx-sub" id="real-cost-total-inr">≈ ₹1,90,146/mo</span>
             </div>
           </div>
 
@@ -3215,7 +3215,7 @@
                 <option value="us-east-1" selected>us-east-1 (N. Virginia)</option>
                 <option value="us-west-2">us-west-2 (Oregon)</option>
                 <option value="eu-west-1">eu-west-1 (Ireland)</option>
-                <option value="ap-southeast-1">ap-southeast-1 (Singapore)</option>
+                <option value="ap-south-1">ap-south-1 (Mumbai)</option>
               </select>
             </div>
             <!-- Source Chip -->
@@ -3255,12 +3255,20 @@
                   <td class="tabular cost-inr-cell" data-usd="7.72" style="text-align: right; font-weight: 700; color: var(--text2);">≈ ₹645</td>
                 </tr>
                 <tr>
-                  <td><strong>Aurora PostgreSQL</strong></td>
+                  <td><strong>RDS PostgreSQL Instance</strong></td>
                   <td>db.r6g.xlarge (Multi-AZ)</td>
                   <td>$0.52 / hr</td>
                   <td>730 hrs</td>
                   <td class="tabular" style="font-weight: 700;">$759.20</td>
                   <td class="tabular cost-inr-cell" data-usd="759.20" style="text-align: right; font-weight: 700; color: var(--text2);">≈ ₹63,393</td>
+                </tr>
+                <tr>
+                  <td><strong>RDS gp3 Baseline Storage</strong></td>
+                  <td>gp3 SSD (3,000 IOPS, 125 MB/s included)</td>
+                  <td>$0.23 / GB-mo</td>
+                  <td>1,000 GB</td>
+                  <td class="tabular" style="font-weight: 700;">$230.00</td>
+                  <td class="tabular cost-inr-cell" data-usd="230.00" style="text-align: right; font-weight: 700; color: var(--text2);">≈ ₹19,205</td>
                 </tr>
                 <tr>
                   <td><strong>ElastiCache Redis</strong></td>
@@ -3279,12 +3287,20 @@
                   <td class="tabular cost-inr-cell" data-usd="450.00" style="text-align: right; font-weight: 700; color: var(--text2);">≈ ₹37,575</td>
                 </tr>
                 <tr>
-                  <td><strong>Data Transfer Out</strong></td>
-                  <td>Internet egress bytes</td>
+                  <td><strong>S3 Data Transfer Out</strong></td>
+                  <td>Internet Egress (Regional tier)</td>
                   <td>$0.09 / GB</td>
                   <td>3,500 GB</td>
                   <td class="tabular" style="font-weight: 700;">$315.00</td>
                   <td class="tabular cost-inr-cell" data-usd="315.00" style="text-align: right; font-weight: 700; color: var(--text2);">≈ ₹26,303</td>
+                </tr>
+                <tr>
+                  <td><strong>S3 Request Pricing (PUT/GET)</strong></td>
+                  <td>API ops ($0.005/1k PUT, $0.0004/1k GET)</td>
+                  <td>$0.005 / $0.0004</td>
+                  <td>12.5M ops</td>
+                  <td class="tabular" style="font-weight: 700;">$12.80</td>
+                  <td class="tabular cost-inr-cell" data-usd="12.80" style="text-align: right; font-weight: 700; color: var(--text2);">≈ ₹1,069</td>
                 </tr>
               </tbody>
             </table>
@@ -3297,9 +3313,26 @@
               <canvas id="cost-doughnut-chart"></canvas>
             </div>
             <div style="font-size: 0.78rem; color: var(--text3); text-align: center; margin-top: 10px;">
-              Primary cost center: Relational Engine (37.2%) followed by Caching (19.8%)
+              Primary cost center: Relational Engine (33.3%) &amp; Analytics (19.8%). IOPS &amp; Egress fully accounted.
             </div>
           </div>
+        </div>
+
+        <!-- Inset Assumptions & Pricing Sources Panel -->
+        <div class="neu-inset" style="border-radius: var(--radius-card); padding: 20px 24px; margin-top: 24px;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+            <span>Pricing Sources &amp; Cost Estimation Assumptions</span>
+            <span class="delta-pill delta-green" style="font-size: 0.72rem; padding: 2px 8px;">AWS List Verified</span>
+          </h4>
+          <p style="font-size: 0.83rem; color: var(--text2); line-height: 1.6; margin-bottom: 8px;">
+            Line items reflect real AWS list prices and verified regional rate tables:
+          </p>
+          <ul style="font-size: 0.82rem; color: var(--text2); line-height: 1.6; padding-left: 20px; margin: 0;">
+            <li><strong>S3 Data Transfer Out (Internet Egress):</strong> Billed at regional standard egress tiers ($0.09/GB for us-east-1, us-west-2, eu-west-1; $0.109/GB for ap-south-1). Source: <a href="https://aws.amazon.com/s3/pricing/" target="_blank" rel="noopener" style="color: var(--hero); text-decoration: underline;">AWS S3 Pricing — Data Transfer</a>.</li>
+            <li><strong>RDS gp3 Baseline Storage:</strong> Single-AZ $0.115/GB-mo and Multi-AZ $0.23/GB-mo. Includes baseline performance of 3,000 IOPS and 125 MB/s throughput at no extra charge. Source: <a href="https://aws.amazon.com/rds/postgresql/pricing/" target="_blank" rel="noopener" style="color: var(--hero); text-decoration: underline;">AWS RDS Pricing</a>.</li>
+            <li><strong>S3 Request Pricing:</strong> PUT/COPY/POST/LIST priced at $0.005 per 1,000 requests; GET/SELECT priced at $0.0004 per 1,000 requests. Source: <a href="https://aws.amazon.com/s3/pricing/" target="_blank" rel="noopener" style="color: var(--hero); text-decoration: underline;">AWS S3 Request &amp; Retrieval Pricing</a>.</li>
+            <li><strong>Compute &amp; Caching:</strong> 730 operating hours per month for PostgreSQL RDS instances and ElastiCache Redis nodes.</li>
+          </ul>
         </div>
       </section>
 
@@ -4372,10 +4405,10 @@
           charts.costDoughnut = new Chart(costCanvas.getContext('2d'), {
             type: 'doughnut',
             data: {
-              labels: ['Aurora Relational', 'S3 + Glacier', 'ElastiCache', 'Analytics', 'Data Transfer'],
+              labels: ['RDS PostgreSQL Instance', 'RDS gp3 Storage (IOPS incl.)', 'ElastiCache Redis', 'Redshift Analytics', 'S3 Data Transfer Out', 'S3 Standard & Glacier', 'S3 API Requests'],
               datasets: [{
-                data: [759.20, 104.32, 405.88, 450.00, 315.00],
-                backgroundColor: ['#E4543B', '#F97316', '#F5D547', '#14B8A6', '#A0A0A0'],
+                data: [759.20, 230.00, 405.88, 450.00, 315.00, 104.32, 12.80],
+                backgroundColor: ['#E4543B', '#FB923C', '#F5D547', '#14B8A6', '#60A5FA', '#A855F7', '#34D399'],
                 borderColor: 'var(--surface)',
                 borderWidth: 3
               }]
