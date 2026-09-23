@@ -17,6 +17,31 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 
+  <!-- Client Configuration & Security Token (Demo fallback ONLY when ENV=dev) -->
+  <script>
+    // NOTE: The demo key 'dev-demo-key' fallback is active ONLY when ENV=dev.
+    // In production, configure API_KEYS in the deployment environment.
+    window.__CONFIG = window.__CONFIG || {
+      env: 'dev',
+      apiKey: 'dev-demo-key'
+    };
+    function getApiKey() {
+      return (window.__CONFIG && window.__CONFIG.apiKey) || 'dev-demo-key';
+    }
+    // Attempt dynamic config load from env-served endpoint
+    try {
+      fetch('/api/v1/config')
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(cfg) {
+          if (cfg && cfg.apiKey) {
+            window.__CONFIG.apiKey = cfg.apiKey;
+            window.__CONFIG.env = cfg.env;
+          }
+        })
+        .catch(function() {});
+    } catch(e) {}
+  </script>
+
   <style>
     
     /* ==========================================================================
@@ -4886,7 +4911,9 @@ resource "aws_rds_cluster" "aurora_cluster" {
       function initInsightsTab() {
         renderInsights();
         // Also optionally refresh from live API in background if available
-        fetch(`/api/v1/insights?dark=${document.documentElement.getAttribute('data-theme') !== 'light'}`)
+        fetch(`/api/v1/insights?dark=${document.documentElement.getAttribute('data-theme') !== 'light'}`, {
+          headers: { 'X-API-Key': getApiKey() }
+        })
           .then(r => r.ok ? r.json() : null)
           .then(live => {
             if (live && live.figures) {
@@ -5090,7 +5117,10 @@ resource "aws_rds_cluster" "aurora_cluster" {
         try {
           const res = await fetch('/api/v1/second-opinion', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'X-API-Key': getApiKey()
+            },
             body: JSON.stringify({ scenario }),
           });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);

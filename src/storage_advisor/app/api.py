@@ -17,6 +17,11 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, ValidationError
 
 from storage_advisor.analytics.whatif import WhatIfAnalyzer
+from storage_advisor.app.security import (
+    authenticate_and_rate_limit,
+    get_client_api_key,
+    get_environment,
+)
 from storage_advisor.architecture.builder import ArchitectureBuilder
 from storage_advisor.db.record import save_scenario
 from storage_advisor.detection.problem_detector import detect_problems
@@ -150,6 +155,11 @@ app.add_middleware(
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
+    # 1. API key authentication & rate limiting for /api/v1/* routes
+    auth_response = await authenticate_and_rate_limit(request)
+    if auth_response is not None:
+        return auth_response
+
     start = time.perf_counter()
     try:
         response = await call_next(request)
@@ -168,6 +178,20 @@ async def log_requests(request: Request, call_next):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+@app.get("/api/v1/config")
+async def get_config():
+    """Client configuration endpoint.
+
+    NOTE: The demo key fallback is permitted ONLY when ENV=dev.
+    In production, API_KEYS must be configured.
+    """
+    return {
+        "env": get_environment(),
+        "apiKey": get_client_api_key(),
+        "rateLimit": {"requestsPerMinute": 60},
+    }
+
 
 @app.post("/api/v1/scenarios")
 async def create_scenario(body: ScenarioRequest):

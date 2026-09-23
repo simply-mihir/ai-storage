@@ -12,6 +12,8 @@ services:
       - DATABASE_URL=postgresql://advisor:advisor@postgres:5432/advisor
       - BEDROCK_MODEL_ID=${BEDROCK_MODEL_ID:-amazon.nova-lite-v1:0}
       - GROQ_API_KEY=${GROQ_API_KEY}
+      - API_KEYS=${API_KEYS:-dev-demo-key}
+      - ENV=${ENV:-dev}
     volumes:
       - ./data:/app/data
     depends_on:
