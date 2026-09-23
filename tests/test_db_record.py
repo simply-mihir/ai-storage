@@ -45,6 +45,22 @@ class TestGracefulDegradation:
             result = record.get_scenario("test-id")
             assert result is None
 
+    def test_fallback_with_patched_connector_raising(self):
+        """Fallback path test with patched connector raising an exception."""
+        with (
+            patch.dict(
+                "os.environ",
+                {"DATABASE_URL": "postgresql://advisor:advisor@localhost:5432/advisor"},
+            ),
+            patch(
+                "storage_advisor.db.record.create_engine",
+                side_effect=RuntimeError("connection refused"),
+            ),
+        ):
+            record.reset()
+            assert record.save_scenario("test-id", {"key": "value"}) is False
+            assert record.get_scenario("test-id") is None
+
     def test_api_still_works_without_pg(self):
         """POST /api/v1/scenarios succeeds even when PG is down."""
         with patch.dict("os.environ", {}, clear=True):

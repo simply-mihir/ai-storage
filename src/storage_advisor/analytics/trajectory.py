@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from datetime import date
+from dataclasses import dataclass
 
 from storage_advisor.architecture.builder import ArchitectureBuilder
 from storage_advisor.detection.problem_detector import detect_problems
@@ -13,7 +12,9 @@ from storage_advisor.estimation.impact_estimator import estimate_impact
 from storage_advisor.integrations.pricing import AWSPricingClient
 from storage_advisor.knowledge.technique_catalog import load_techniques
 from storage_advisor.profiling.workload_profiler import profile_workload
-from storage_advisor.recommendation.recommendation_engine import run_recommendation_engine
+from storage_advisor.recommendation.recommendation_engine import (
+    run_recommendation_engine,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -286,9 +287,11 @@ class GrowthTrajectorySimulator:
         starting_cost = snapshots[0].real_cost_usd if snapshots else 0.0
 
         parts = [
-            f"Over {months} months, the workload grows from "
-            f"{scenario.expected_users:,} to {final_users:,} users and "
-            f"{scenario.current_storage_gb:,} to {ending_storage:,.0f} GB of storage. "
+            (
+                f"Over {months} months, the workload grows from "
+                f"{scenario.expected_users:,} to {final_users:,} users and "
+                f"{scenario.current_storage_gb:,} to {ending_storage:,.0f} GB of storage. "
+            )
         ]
 
         if tipping_points:

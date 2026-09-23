@@ -601,15 +601,15 @@ output "redshift_endpoint" {
     ) -> str:
         project_name = f"{scenario.business_domain.lower()}-storage"
         lines = [
-            f'aws_region         = "us-east-1"',
+            'aws_region         = "us-east-1"',
             f'project_name       = "{project_name}"',
-            f'environment        = "production"',
-            f'vpc_id             = "vpc-xxxxxxxxxxxxxxxxx"',
-            f'private_subnet_ids = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-xxxxxxxxxxxxxxxxx"]',
+            'environment        = "production"',
+            'vpc_id             = "vpc-xxxxxxxxxxxxxxxxx"',
+            'private_subnet_ids = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-xxxxxxxxxxxxxxxxx"]',
         ]
         vars_tf = files.get("variables.tf", "")
         if "database_password" in vars_tf:
-            lines.append(f'database_password   = "CHANGE_ME"')
+            lines.append('database_password   = "CHANGE_ME"')
         if "redshift_password" in vars_tf:
-            lines.append(f'redshift_password   = "CHANGE_ME"')
+            lines.append('redshift_password   = "CHANGE_ME"')
         return "\n".join(lines) + "\n"

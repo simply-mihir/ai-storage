@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import numpy as np
 import networkx as nx
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -14,15 +14,15 @@ PRIMARY = "#5B4FDC"
 SECONDARY = "#1DB9A0"
 ACCENT = "#F59E0B"
 
-_LAYOUT_DEFAULTS = dict(
-    font=dict(family="Inter, system-ui, sans-serif", size=13, color="#E2E8F0"),
-    plot_bgcolor="#1A1A2E",
-    paper_bgcolor="#0F0F1A",
-    margin=dict(t=80, b=60, l=60, r=40),
-    legend=dict(bgcolor="#1A1A2E", bordercolor="#2D2D4E", font=dict(color="#E2E8F0")),
-)
+_LAYOUT_DEFAULTS = {
+    "font": {"family": "Inter, system-ui, sans-serif", "size": 13, "color": "#E2E8F0"},
+    "plot_bgcolor": "#1A1A2E",
+    "paper_bgcolor": "#0F0F1A",
+    "margin": {"t": 80, "b": 60, "l": 60, "r": 40},
+    "legend": {"bgcolor": "#1A1A2E", "bordercolor": "#2D2D4E", "font": {"color": "#E2E8F0"}},
+}
 
-_GRID = dict(gridcolor="#2D2D4E", linecolor="#2D2D4E")
+_GRID = {"gridcolor": "#2D2D4E", "linecolor": "#2D2D4E"}
 
 
 def _readable(name: str) -> str:
@@ -50,10 +50,10 @@ def kpi_cards(store: AnalyticsStore) -> go.Figure:
             go.Indicator(
                 mode="number+delta",
                 value=value,
-                delta=dict(reference=0, valueformat=".1f"),
-                number=dict(suffix=suffix, valueformat=".1f" if suffix else ","),
-                title=dict(text=title, font=dict(size=14)),
-                domain=dict(row=0, column=i - 1),
+                delta={"reference": 0, "valueformat": ".1f"},
+                number={"suffix": suffix, "valueformat": ".1f" if suffix else ","},
+                title={"text": title, "font": {"size": 14}},
+                domain={"row": 0, "column": i - 1},
             ),
             row=1, col=i,
         )
@@ -85,12 +85,12 @@ def technique_frequency_chart(store: AnalyticsStore) -> go.Figure:
         textposition="outside",
     ))
     fig.update_layout(
-        title=dict(
-            text=(
+        title={
+            "text": (
                 "Technique recommendation frequency across 2,000 scenarios"
                 "<br><sup>Synthetic data — not empirical production measurements</sup>"
             ),
-        ),
+        },
         xaxis_title="% of scenarios",
         yaxis_title="",
         **_LAYOUT_DEFAULTS,
@@ -128,7 +128,7 @@ def domain_comparison_chart(store: AnalyticsStore) -> go.Figure:
         **_LAYOUT_DEFAULTS,
         height=450,
     )
-    fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, bgcolor="#1A1A2E", bordercolor="#2D2D4E"))
+    fig.update_layout(legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "left", "x": 0, "bgcolor": "#1A1A2E", "bordercolor": "#2D2D4E"})
     fig.update_xaxes(**_GRID)
     fig.update_yaxes(**_GRID)
     return fig
@@ -247,7 +247,7 @@ def cooccurrence_network(
         edge_traces.append(go.Scatter(
             x=[x0, x1, None], y=[y0, y1, None],
             mode="lines",
-            line=dict(width=1, color=f"rgba(45,45,78,{opacity:.2f})"),
+            line={"width": 1, "color": f"rgba(45,45,78,{opacity:.2f})"},
             hoverinfo="skip",
             showlegend=False,
         ))
@@ -265,10 +265,10 @@ def cooccurrence_network(
     node_trace = go.Scatter(
         x=node_x, y=node_y,
         mode="markers+text",
-        marker=dict(size=node_size, color=PRIMARY, line=dict(width=1, color="#1A1A2E")),
+        marker={"size": node_size, "color": PRIMARY, "line": {"width": 1, "color": "#1A1A2E"}},
         text=[_readable(n) for n in G.nodes()],
         textposition="top center",
-        textfont=dict(size=9),
+        textfont={"size": 9},
         hovertext=node_text,
         hoverinfo="text",
         showlegend=False,

@@ -141,3 +141,14 @@ class TestHealthEndpoint:
             assert key in data, f"Missing key: {key}"
         assert data["status"] == "healthy"
         assert data["kb_technique_count"] == 19
+
+
+class TestInsightsEndpoint:
+    def test_get_insights_returns_figures(self):
+        resp = client.get("/api/v1/insights?dark=true")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "figures" in data
+        assert "catalog" in data
+        for key in ("treemap", "industry_heatmap", "correlation", "bubble", "graph"):
+            assert key in data["figures"]

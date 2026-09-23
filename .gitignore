@@ -34,3 +34,5 @@ htmlcov/
 # Data artifacts
 data/processed/
 data/metadata.db
+data/parquet/
+data/insights_cache.json

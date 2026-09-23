@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Callable
+from collections.abc import Callable
+from dataclasses import dataclass
 
 from storage_advisor.architecture.builder import ArchitectureBuilder, ArchitectureOutput
 from storage_advisor.domain.recommendations import RecommendationResult
 from storage_advisor.domain.scenario import Scenario
 from storage_advisor.estimation.impact_estimator import ImpactReport, estimate_impact
-from storage_advisor.recommendation.recommendation_engine import run_recommendation_engine
+from storage_advisor.recommendation.recommendation_engine import (
+    run_recommendation_engine,
+)
 
 
 @dataclass

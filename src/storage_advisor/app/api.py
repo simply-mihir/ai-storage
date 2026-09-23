@@ -499,6 +499,17 @@ async def export_report(
     )
 
 
+@app.get("/api/v1/insights")
+async def get_insights(dark: bool = True):
+    from storage_advisor.analytics.insights import all_figures, get_family_catalog
+
+    figs = all_figures(dark=dark)
+    return {
+        "figures": figs,
+        "catalog": get_family_catalog(),
+    }
+
+
 _STATIC_DIR = Path(__file__).resolve().parents[3] / "static"
 if not _STATIC_DIR.exists():
     _STATIC_DIR = Path("/app/static")
