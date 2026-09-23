@@ -28,6 +28,8 @@ from storage_advisor.profiling.workload_profiler import profile_workload
 from storage_advisor.recommendation.recommendation_engine import (
     run_recommendation_engine,
 )
+from storage_advisor.reports.builder import build_report
+from storage_advisor.reports.export import render_markdown, render_pdf
 
 logger = logging.getLogger("storage_advisor.api")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s — %(message)s")
@@ -406,6 +408,93 @@ async def export_terraform(body: TerraformRequest):
         "component_count": export.component_count,
         "summary": export.summary,
     }
+
+
+class ReportRequest(BaseModel):
+    scenario: dict[str, Any]
+
+
+@app.post("/api/v1/report")
+async def generate_report(body: ReportRequest):
+    try:
+        scenario = Scenario(**upconvert_v1(body.scenario))
+    except (ValidationError, ValueError, KeyError, TypeError) as e:
+        return JSONResponse(
+            status_code=400,
+            content={"error": f"Invalid scenario: {e}"},
+        )
+
+    payload = build_report(scenario)
+    return payload.model_dump()
+
+
+@app.get("/api/v1/report/export")
+async def export_report(
+    format: str = "md",
+    business_domain: str = "AI",
+    company_size: str = "ENTERPRISE",
+    expected_users: int = 10_000,
+    concurrent_users: int = 1_000,
+    current_storage_gb: float = 100.0,
+    daily_growth_gb: float = 1.0,
+    read_intensity: str = "HIGH",
+    write_intensity: str = "HIGH",
+    access_pattern: str = "MIXED",
+    latency_requirement_ms: float = 100.0,
+    availability_requirement: float = 99.99,
+    rto_minutes: float = 60.0,
+    rpo_minutes: float = 15.0,
+    retention_years: float = 7.0,
+    budget_level: str = "HIGH",
+):
+    try:
+        scenario = Scenario(**upconvert_v1({
+            "business_domain": business_domain,
+            "company_size": company_size,
+            "expected_users": expected_users,
+            "concurrent_users": concurrent_users,
+            "current_storage_gb": current_storage_gb,
+            "daily_growth_gb": daily_growth_gb,
+            "data_types": ["TEXT"],
+            "structured_data_pct": 50.0,
+            "semi_structured_data_pct": 30.0,
+            "unstructured_data_pct": 20.0,
+            "read_intensity": read_intensity,
+            "write_intensity": write_intensity,
+            "access_pattern": access_pattern,
+            "latency_requirement_ms": latency_requirement_ms,
+            "availability_requirement": availability_requirement,
+            "rto_minutes": rto_minutes,
+            "rpo_minutes": rpo_minutes,
+            "retention_years": retention_years,
+            "budget_level": budget_level,
+            "analytics_required": False,
+            "real_time_processing_required": False,
+            "sensitive_data": False,
+            "encryption_required": False,
+            "compliance_requirements": ["NONE"],
+        }))
+    except (ValidationError, ValueError, KeyError, TypeError) as e:
+        return JSONResponse(
+            status_code=400,
+            content={"error": f"Invalid parameters: {e}"},
+        )
+
+    payload = build_report(scenario)
+
+    if format == "pdf":
+        pdf_bytes = render_pdf(payload)
+        return JSONResponse(
+            status_code=200,
+            content={"data": pdf_bytes.hex(), "format": "pdf", "encoding": "hex"},
+            headers={"Content-Type": "application/json"},
+        )
+
+    md_text = render_markdown(payload)
+    return JSONResponse(
+        status_code=200,
+        content={"data": md_text, "format": "md"},
+    )
 
 
 _STATIC_DIR = Path(__file__).resolve().parents[3] / "static"
