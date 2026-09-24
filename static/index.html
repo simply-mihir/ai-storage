@@ -1849,18 +1849,89 @@
     .form-group.has-error .form-select {
       box-shadow: var(--shadow-inset-sm), inset 0 0 0 1.5px var(--neg);
     }
-    .form-error-text {
+    .form-error-card {
+      background: var(--surface);
+      box-shadow: var(--shadow-raised);
+      border-radius: var(--radius-card);
+      border-left: 3px solid var(--neg);
+      padding: 10px 14px;
+      margin-top: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      overflow: hidden;
+    }
+    .form-error-card .err-icon {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      color: var(--neg);
+      margin-top: 1px;
+    }
+    .form-error-card .err-body { flex: 1; min-width: 0; }
+    .form-error-card .err-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .form-error-card .err-msg {
       font-size: 0.72rem;
       color: var(--neg);
-      margin-top: 2px;
+      line-height: 1.4;
+    }
+    .form-error-card .err-hint {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      background: var(--well);
+      box-shadow: var(--shadow-inset-sm);
+      color: var(--text3);
+      font-family: var(--font-mono, monospace);
+    }
+    .validation-summary {
+      background: var(--surface);
+      box-shadow: var(--shadow-raised);
+      border-radius: var(--radius-card);
+      border-left: 3px solid var(--neg);
+      padding: 12px 18px;
+      margin-bottom: 16px;
       display: none;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
     }
-    .form-group.has-error .form-error-text {
-      display: block;
+    .validation-summary.visible { display: flex; }
+    .validation-summary .vs-badge {
+      background: var(--neg);
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.82rem;
+      border-radius: var(--radius-pill);
+      padding: 2px 10px;
+      min-width: 24px;
+      text-align: center;
     }
-    .pill-group-error .form-error-text {
-      display: block;
+    .validation-summary .vs-text {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
     }
+    @keyframes field-shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-3px); }
+      40% { transform: translateX(3px); }
+      60% { transform: translateX(-3px); }
+      80% { transform: translateX(3px); }
+    }
+    .form-group.shake-once { animation: field-shake 300ms ease-in-out; }
+    @media (prefers-reduced-motion: reduce) {
+      .form-group.shake-once { animation: none; }
+    }
+    .pill-group-error .form-error-card { margin-top: 8px; }
     .empty-state {
       display: flex;
       flex-direction: column;
@@ -3191,8 +3262,7 @@
               <div class="form-grid-2col">
                 <div class="form-group">
                   <label for="f-domain">Business Domain</label>
-                  <input type="text" id="f-domain" class="form-input" placeholder="e.g. AI SaaS, Fintech, Healthcare" aria-describedby="f-domain-err" />
-                  <span class="form-error-text" id="f-domain-err">Required</span>
+                  <input type="text" id="f-domain" class="form-input" placeholder="e.g. AI SaaS, Fintech, Healthcare" />
                 </div>
                 <div class="form-group">
                   <label for="f-size">Company Size</label>
@@ -3202,43 +3272,38 @@
                     <option value="MEDIUM">Growth / Medium</option>
                     <option value="ENTERPRISE">Enterprise</option>
                   </select>
-                  <span class="form-error-text" id="f-size-err">Required</span>
                 </div>
                 <div class="form-group">
                   <label for="f-users">Expected Users</label>
                   <div class="form-input-wrap">
-                    <input type="number" id="f-users" class="form-input tabular" placeholder="e.g. 25000" aria-describedby="f-users-help f-users-err" />
+                    <input type="number" id="f-users" class="form-input tabular" placeholder="e.g. 25000" aria-describedby="f-users-help" />
                     <span class="form-input-suffix">users</span>
                   </div>
                   <span class="form-helper" id="f-users-help">Total registered user base</span>
-                  <span class="form-error-text" id="f-users-err">Required — must be &gt; 0</span>
                 </div>
                 <div class="form-group">
                   <label for="f-concurrent">Concurrent Users</label>
                   <div class="form-input-wrap">
-                    <input type="number" id="f-concurrent" class="form-input tabular" placeholder="e.g. 3500" aria-describedby="f-concurrent-help f-concurrent-err" />
+                    <input type="number" id="f-concurrent" class="form-input tabular" placeholder="e.g. 3500" aria-describedby="f-concurrent-help" />
                     <span class="form-input-suffix">users</span>
                   </div>
                   <span class="form-helper" id="f-concurrent-help">Peak simultaneous active sessions</span>
-                  <span class="form-error-text" id="f-concurrent-err">Required — must be &gt; 0</span>
                 </div>
                 <div class="form-group">
                   <label for="f-storage">Current Storage</label>
                   <div class="form-input-wrap">
-                    <input type="number" id="f-storage" class="form-input tabular" placeholder="e.g. 12000" aria-describedby="f-storage-help f-storage-err" />
+                    <input type="number" id="f-storage" class="form-input tabular" placeholder="e.g. 12000" aria-describedby="f-storage-help" />
                     <span class="form-input-suffix">GB</span>
                   </div>
                   <span class="form-helper" id="f-storage-help">Total data volume today</span>
-                  <span class="form-error-text" id="f-storage-err">Required — must be &gt; 0</span>
                 </div>
                 <div class="form-group">
                   <label for="f-growth">Daily Growth</label>
                   <div class="form-input-wrap">
-                    <input type="number" id="f-growth" class="form-input tabular" placeholder="e.g. 85" aria-describedby="f-growth-help f-growth-err" />
+                    <input type="number" id="f-growth" class="form-input tabular" placeholder="e.g. 85" aria-describedby="f-growth-help" />
                     <span class="form-input-suffix">GB/day</span>
                   </div>
                   <span class="form-helper" id="f-growth-help">Average daily data ingestion</span>
-                  <span class="form-error-text" id="f-growth-err">Required — must be &gt; 0</span>
                 </div>
                 <div class="form-group">
                   <label for="f-rw-ratio">Read / Write Ratio</label>
@@ -3249,34 +3314,30 @@
                     <option value="50:50">50% Read / 50% Write</option>
                     <option value="20:80">20% Read / 80% Write (Write Heavy)</option>
                   </select>
-                  <span class="form-error-text" id="f-rw-ratio-err">Required</span>
                 </div>
                 <div class="form-group">
                   <label for="f-latency">Latency SLA</label>
                   <div class="form-input-wrap">
-                    <input type="number" id="f-latency" class="form-input tabular" placeholder="e.g. 45" aria-describedby="f-latency-help f-latency-err" />
+                    <input type="number" id="f-latency" class="form-input tabular" placeholder="e.g. 45" aria-describedby="f-latency-help" />
                     <span class="form-input-suffix">ms</span>
                   </div>
                   <span class="form-helper" id="f-latency-help">Maximum acceptable P95 read latency</span>
-                  <span class="form-error-text" id="f-latency-err">Required — must be &gt; 0</span>
                 </div>
                 <div class="form-group">
                   <label for="f-retention">Retention</label>
                   <div class="form-input-wrap">
-                    <input type="number" id="f-retention" class="form-input tabular" placeholder="e.g. 36" aria-describedby="f-retention-help f-retention-err" />
+                    <input type="number" id="f-retention" class="form-input tabular" placeholder="e.g. 36" aria-describedby="f-retention-help" />
                     <span class="form-input-suffix">months</span>
                   </div>
                   <span class="form-helper" id="f-retention-help">Minimum data retention period</span>
-                  <span class="form-error-text" id="f-retention-err">Required — must be &gt; 0</span>
                 </div>
                 <div class="form-group">
                   <label for="f-budget">Budget Ceiling</label>
                   <div class="form-input-wrap">
-                    <input type="number" id="f-budget" class="form-input tabular" placeholder="e.g. 8500" aria-describedby="f-budget-help f-budget-err" />
+                    <input type="number" id="f-budget" class="form-input tabular" placeholder="e.g. 8500" aria-describedby="f-budget-help" />
                     <span class="form-input-suffix">$/mo</span>
                   </div>
                   <span class="form-helper" id="f-budget-help">Maximum monthly infrastructure spend</span>
-                  <span class="form-error-text" id="f-budget-err">Required — must be &gt; 0</span>
                 </div>
               </div>
 
@@ -3292,7 +3353,6 @@
                   <button class="pill-checkbox-btn" data-val="VIDEO">VIDEO</button>
                 </div>
                 <span class="pill-helper">Select all that apply</span>
-                <span class="form-error-text" id="data-type-pills-err">Select at least one data type</span>
               </div>
 
               <!-- Chip Multi-Select Compliance -->
@@ -3309,6 +3369,12 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Validation Summary -->
+        <div class="validation-summary" id="validation-summary" role="status" aria-live="polite">
+          <span class="vs-badge" id="vs-count">0</span>
+          <span class="vs-text" id="vs-text">fields need attention</span>
         </div>
 
         <!-- Sticky Action Bar -->
@@ -4983,49 +5049,174 @@ resource "aws_rds_cluster" "aurora_cluster" {
         });
       });
 
+      const _validationMeta = {
+        'f-domain':     { label: 'Business Domain', type: 'text',   msg: 'Enter a business domain to continue.', hint: 'e.g. AI SaaS, Fintech, Healthcare' },
+        'f-size':       { label: 'Company Size',    type: 'select', msg: 'Choose a company size tier.',            hint: 'Startup / Growth / Enterprise' },
+        'f-users':      { label: 'Expected Users',  type: 'number', msg: 'Enter a positive number of expected users.', hint: 'e.g. 25000' },
+        'f-concurrent': { label: 'Concurrent Users', type: 'number', msg: 'Enter a positive concurrent user count.', hint: 'e.g. 3500' },
+        'f-storage':    { label: 'Current Storage',  type: 'number', msg: 'Enter a positive storage volume in GB.', hint: 'e.g. 12000' },
+        'f-growth':     { label: 'Daily Growth',     type: 'number', msg: 'Enter a positive daily growth rate.',    hint: 'e.g. 85' },
+        'f-rw-ratio':   { label: 'Read / Write Ratio', type: 'select', msg: 'Select a read/write ratio.',          hint: '90:10 / 80:20 / 50:50 / 20:80' },
+        'f-latency':    { label: 'Latency SLA',      type: 'number', msg: 'Enter a positive latency target in ms.', hint: 'e.g. 45' },
+        'f-retention':  { label: 'Retention',         type: 'number', msg: 'Enter a positive retention period.',    hint: 'e.g. 36' },
+        'f-budget':     { label: 'Budget Ceiling',    type: 'number', msg: 'Enter a positive monthly budget.',      hint: 'e.g. 8500' },
+        'data-types':   { label: 'Data Types',        type: 'pills',  msg: 'Select at least one data type.',       hint: 'TEXT, VECTOR, JSON, ...' },
+      };
+      const _reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let _formTouched = false;
+      let _activeErrors = new Map();
+      let _shakenFields = new Set();
+
+      function _isFieldInvalid(id) {
+        if (id === 'data-types') return document.querySelectorAll('#data-type-pills .pill-checkbox-btn.active').length === 0;
+        const el = document.getElementById(id);
+        if (!el) return true;
+        const meta = _validationMeta[id];
+        if (meta.type === 'text') return !el.value.trim();
+        if (meta.type === 'select') return !el.value;
+        return !el.value || Number(el.value) <= 0;
+      }
+
+      function _makeErrorCard(id) {
+        const meta = _validationMeta[id];
+        const card = document.createElement('div');
+        card.className = 'form-error-card';
+        card.id = `err-card-${id}`;
+        card.setAttribute('role', 'alert');
+        card.innerHTML = `<svg class="err-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="err-body"><div class="err-label">${meta.label}</div><div class="err-msg">${meta.msg}</div><span class="err-hint">${meta.hint}</span></div>`;
+        return card;
+      }
+
+      function _insertErrorCard(id) {
+        if (_activeErrors.has(id)) return;
+        const card = _makeErrorCard(id);
+        let container;
+        if (id === 'data-types') {
+          container = document.getElementById('data-type-group');
+          document.getElementById('data-type-group')?.classList.add('pill-group-error');
+        } else {
+          const el = document.getElementById(id);
+          container = el?.closest('.form-group');
+          container?.classList.add('has-error');
+          el?.setAttribute('aria-invalid', 'true');
+          const helpId = el?.getAttribute('aria-describedby') || '';
+          el?.setAttribute('aria-describedby', (helpId + ' err-card-' + id).trim());
+        }
+        if (!container) return;
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.9)';
+        card.style.height = '0';
+        card.style.overflow = 'hidden';
+        container.appendChild(card);
+        _activeErrors.set(id, card);
+        if (!_shakenFields.has(id) && container.classList.contains('form-group')) {
+          if (!_reducedMotion) container.classList.add('shake-once');
+          _shakenFields.add(id);
+          setTimeout(() => container.classList.remove('shake-once'), 350);
+        }
+      }
+
+      function _removeErrorCard(id) {
+        const card = _activeErrors.get(id);
+        if (!card) return;
+        _activeErrors.delete(id);
+        const el = id === 'data-types' ? null : document.getElementById(id);
+        if (el) {
+          el.removeAttribute('aria-invalid');
+          const desc = (el.getAttribute('aria-describedby') || '').replace(`err-card-${id}`, '').trim();
+          if (desc) el.setAttribute('aria-describedby', desc); else el.removeAttribute('aria-describedby');
+          const helpEl = document.getElementById(`${id}-help`);
+          if (helpEl) el.setAttribute('aria-describedby', helpEl.id);
+        }
+        if (id === 'data-types') document.getElementById('data-type-group')?.classList.remove('pill-group-error');
+        else el?.closest('.form-group')?.classList.remove('has-error');
+        if (_reducedMotion) { card.remove(); _updateSummary(); return; }
+        gsap.to(card, { opacity: 0, scale: 0.95, height: 0, duration: 0.25, ease: 'power2.in', onComplete: () => { card.remove(); _updateSummary(); } });
+      }
+
+      function _updateSummary() {
+        const banner = document.getElementById('validation-summary');
+        const badge = document.getElementById('vs-count');
+        const text = document.getElementById('vs-text');
+        const n = _activeErrors.size;
+        if (n === 0) {
+          banner.classList.remove('visible');
+          if (_formTouched && !_reducedMotion) {
+            const btn = document.getElementById('arch-analyze-btn');
+            if (btn) gsap.fromTo(btn, { boxShadow: '0 0 0 0px rgba(232,120,12,0.5)' }, { boxShadow: '0 0 0 12px rgba(232,120,12,0)', duration: 0.6, ease: 'power2.out' });
+          }
+          return;
+        }
+        badge.textContent = n;
+        text.textContent = n === 1 ? 'field needs attention' : 'fields need attention';
+        banner.classList.add('visible');
+      }
+
+      let _summaryFocusIdx = 0;
+      document.getElementById('validation-summary')?.addEventListener('click', () => {
+        const ids = [..._activeErrors.keys()];
+        if (!ids.length) return;
+        _summaryFocusIdx = _summaryFocusIdx % ids.length;
+        const id = ids[_summaryFocusIdx];
+        const target = id === 'data-types' ? document.getElementById('data-type-group') : document.getElementById(id);
+        if (target) { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); target.focus?.(); }
+        _summaryFocusIdx++;
+      });
+
+      function _animateErrorCards() {
+        const cards = [..._activeErrors.values()];
+        if (!cards.length) return;
+        if (_reducedMotion) {
+          cards.forEach(c => { c.style.opacity = '1'; c.style.transform = 'scale(1)'; c.style.height = 'auto'; c.style.overflow = ''; });
+          _updateSummary();
+          const firstId = [..._activeErrors.keys()][0];
+          const firstEl = firstId === 'data-types' ? document.getElementById('data-type-group') : document.getElementById(firstId);
+          firstEl?.focus?.();
+          return;
+        }
+        gsap.to(cards, {
+          opacity: 1, scale: 1, height: 'auto', overflow: '',
+          duration: 0.35, ease: 'back.out(1.7)',
+          stagger: 0.07,
+          onStart: () => {
+            const firstId = [..._activeErrors.keys()][0];
+            const firstEl = firstId === 'data-types' ? document.getElementById('data-type-group') : document.getElementById(firstId);
+            firstEl?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+            firstEl?.focus?.();
+          },
+          onComplete: _updateSummary
+        });
+      }
+
       function validateArchitectForm() {
+        _formTouched = true;
         let valid = true;
         document.querySelectorAll('#panel-architect .form-group').forEach(g => g.classList.remove('has-error'));
-        const dtErrEl = document.getElementById('data-type-pills-err');
-        if (dtErrEl) dtErrEl.style.display = 'none';
         document.getElementById('data-type-group')?.classList.remove('pill-group-error');
 
-        const textFields = ['f-domain'];
-        const selectFields = ['f-size', 'f-rw-ratio'];
-        const numberFields = ['f-users', 'f-concurrent', 'f-storage', 'f-growth', 'f-latency', 'f-retention', 'f-budget'];
+        const prevErrors = new Set(_activeErrors.keys());
+        const newInvalid = [];
 
-        textFields.forEach(id => {
-          const el = document.getElementById(id);
-          if (!el || !el.value.trim()) {
-            el?.closest('.form-group')?.classList.add('has-error');
-            if (el) el.setAttribute('aria-invalid', 'true');
+        for (const id of Object.keys(_validationMeta)) {
+          if (_isFieldInvalid(id)) {
             valid = false;
-          } else if (el) { el.removeAttribute('aria-invalid'); }
-        });
-
-        selectFields.forEach(id => {
-          const el = document.getElementById(id);
-          if (!el || !el.value) {
-            el?.closest('.form-group')?.classList.add('has-error');
-            if (el) el.setAttribute('aria-invalid', 'true');
-            valid = false;
-          } else if (el) { el.removeAttribute('aria-invalid'); }
-        });
-
-        numberFields.forEach(id => {
-          const el = document.getElementById(id);
-          if (!el || !el.value || Number(el.value) <= 0) {
-            el?.closest('.form-group')?.classList.add('has-error');
-            if (el) el.setAttribute('aria-invalid', 'true');
-            valid = false;
-          } else if (el) { el.removeAttribute('aria-invalid'); }
-        });
-
-        if (document.querySelectorAll('#data-type-pills .pill-checkbox-btn.active').length === 0) {
-          if (dtErrEl) dtErrEl.style.display = 'block';
-          document.getElementById('data-type-group')?.classList.add('pill-group-error');
-          valid = false;
+            if (!_activeErrors.has(id)) {
+              _insertErrorCard(id);
+              newInvalid.push(id);
+            } else {
+              const el = id === 'data-types' ? null : document.getElementById(id);
+              if (id === 'data-types') document.getElementById('data-type-group')?.classList.add('pill-group-error');
+              else { el?.closest('.form-group')?.classList.add('has-error'); el?.setAttribute('aria-invalid', 'true'); }
+            }
+            prevErrors.delete(id);
+          } else {
+            if (_activeErrors.has(id)) _removeErrorCard(id);
+            prevErrors.delete(id);
+          }
         }
+
+        if (newInvalid.length) _animateErrorCards();
+        else _updateSummary();
 
         return valid;
       }
@@ -5057,8 +5248,11 @@ resource "aws_rds_cluster" "aurora_cluster" {
         document.querySelectorAll('.pill-checkbox-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('#panel-architect .form-group').forEach(g => g.classList.remove('has-error'));
         document.querySelectorAll('#panel-architect [aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
-        const dtErrEl = document.getElementById('data-type-pills-err');
-        if (dtErrEl) dtErrEl.style.display = 'none';
+        document.querySelectorAll('.form-error-card').forEach(c => c.remove());
+        _activeErrors.clear();
+        _shakenFields.clear();
+        _formTouched = false;
+        _updateSummary();
         document.getElementById('data-type-group')?.classList.remove('pill-group-error');
         document.getElementById('arch-prompt-input').value = '';
         state.scenario = {
@@ -5113,6 +5307,28 @@ resource "aws_rds_cluster" "aurora_cluster" {
 
       document.getElementById('arch-reset-btn')?.addEventListener('click', () => {
         clearArchitectForm();
+      });
+
+      // Live re-validation: fields with active errors re-validate on input/change
+      Object.keys(_validationMeta).forEach(id => {
+        if (id === 'data-types') {
+          document.querySelectorAll('#data-type-pills .pill-checkbox-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              if (_formTouched && _activeErrors.has('data-types')) {
+                setTimeout(() => { if (!_isFieldInvalid('data-types')) { _removeErrorCard('data-types'); _updateSummary(); } }, 0);
+              }
+            });
+          });
+          return;
+        }
+        const el = document.getElementById(id);
+        if (!el) return;
+        const evt = _validationMeta[id].type === 'select' ? 'change' : 'input';
+        el.addEventListener(evt, () => {
+          if (_formTouched && _activeErrors.has(id)) {
+            if (!_isFieldInvalid(id)) { _removeErrorCard(id); _updateSummary(); }
+          }
+        });
       });
 
       // Export Report dropdown toggle
