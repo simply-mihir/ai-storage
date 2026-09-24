@@ -243,7 +243,7 @@ flowchart TD
 
     subgraph Pipeline["Deterministic Core (6 Stages)"]
         P["Stage 1: Workload Profiler\nIngestion velocity · IOPS distribution\nHot/cold ratios · Concurrency tiers"]
-        D["Stage 2: Problem Detector\n14 operational challenges\nSeverity: CRITICAL → LOW"]
+        D["Stage 2: Problem Detector\n18 operational challenges\nSeverity: CRITICAL → LOW"]
         R["Stage 3: Recommendation Engine\nCandidate generation · Rule evaluation\nGraph conflict resolution · Strategy formulation"]
         E["Stage 4: Impact Estimator\nStorage Δ · Cost Δ · Latency Δ\nP25–P75 confidence bands"]
         B["Stage 5: Architecture Builder\nAWS service mapping · Topology\nReplication · Lifecycle policies"]
@@ -455,7 +455,7 @@ sequenceDiagram
 
 | Method | Path | Description |
 | :--- | :--- | :--- |
-| `GET` | `/health` | Liveness probe (engine version, KB technique count, LLM availability, uptime) |
+| `GET` | `/health` | Liveness probe (engine version, KB technique count, kb_stats, ml_stats, LLM availability, uptime) |
 | `GET` | `/metrics` | Prometheus metrics export (requests_total, stage_duration, ai_fallback_tier) |
 
 <details>
