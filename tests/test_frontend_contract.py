@@ -201,3 +201,26 @@ REMOVED_STRINGS = [
 @pytest.mark.parametrize("removed", REMOVED_STRINGS)
 def test_removed_elements_stay_removed(html: str, removed: str) -> None:
     assert removed not in html, f"Removed element '{removed}' has regressed back into the markup"
+
+
+# -- Validation UX contract ----------------------------------------------------
+
+def test_validation_summary_banner(html: str) -> None:
+    assert 'id="validation-summary"' in html, "Missing validation-summary banner"
+    assert 'aria-live="polite"' in html, "validation-summary must have aria-live polite"
+
+
+def test_no_visible_error_cards_on_load(html: str) -> None:
+    """Served HTML must not contain pre-rendered error cards or old error text."""
+    assert "form-error-card" not in html.split("<script")[0], (
+        "Error cards should not exist in initial markup — they are injected by JS"
+    )
+    assert 'class="form-error-text"' not in html, (
+        "Old static form-error-text spans should be removed"
+    )
+
+
+def test_reduced_motion_guard(html: str) -> None:
+    assert "prefers-reduced-motion" in html, (
+        "Reduced-motion media query must be present for validation animations"
+    )
