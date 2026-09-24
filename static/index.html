@@ -562,21 +562,6 @@
       padding-right: 24px;
       text-align: center;
     }
-    .hero-badge-wrap {
-      margin-bottom: 24px;
-      display: inline-block;
-    }
-    .hero-pill-badge {
-      background: var(--well);
-      box-shadow: var(--shadow-inset-sm);
-      border-radius: var(--radius-pill);
-      padding: 6px 18px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text2);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
     .hero-h1 {
       font-size: clamp(48px, 7.5vw, 88px);
       line-height: 1.05;
@@ -1109,31 +1094,6 @@
       box-shadow: var(--shadow-inset-sm);
       color: var(--text3);
       font-weight: 500;
-    }
-
-    /* Credibility Strip */
-    .credibility-section {
-      max-width: 1240px;
-      margin: 0 auto 100px;
-      padding: 0 24px;
-      text-align: center;
-    }
-    .credibility-chips-row {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 16px;
-      margin-top: 24px;
-    }
-    .cred-pill {
-      border-radius: var(--radius-pill);
-      padding: 8px 20px;
-      background: var(--well);
-      box-shadow: var(--shadow-inset-sm);
-      color: var(--text2);
-      font-size: 0.85rem;
-      font-weight: 600;
-      letter-spacing: 0.02em;
     }
 
     /* CTA Band & Footer */
@@ -2191,10 +2151,6 @@
     <main>
       <!-- 4.2 Hero Section -->
       <section class="hero-section">
-        <div class="hero-badge-wrap">
-          <span class="hero-pill-badge">Deterministic Core · Explainable by Design</span>
-        </div>
-
         <h1 class="hero-h1">
           Explainable Storage<br />
           <span class="gradient-text">Architecture Intelligence</span>
@@ -2586,19 +2542,7 @@
         </div>
       </section>
 
-      <!-- 4.10 Credibility Chips -->
-      <section class="credibility-section">
-        <div class="credibility-chips-row">
-          <span class="cred-pill">Docker</span>
-          <span class="cred-pill">Terraform Export</span>
-          <span class="cred-pill">pytest 222</span>
-          <span class="cred-pill">DuckDB Analytics</span>
-          <span class="cred-pill">FastAPI</span>
-          <span class="cred-pill">Pydantic v2</span>
-        </div>
-      </section>
-
-      <!-- 4.11 CTA Band & Footer -->
+      <!-- 4.10 CTA Band & Footer -->
       <section class="cta-band">
         <h2 class="cta-display-line">Ship the architecture you can defend.</h2>
         <button class="neu-btn pill pill-accent launch-dash-btn" style="padding: 14px 36px; font-size: 1.05rem; position: relative; z-index: 2;">

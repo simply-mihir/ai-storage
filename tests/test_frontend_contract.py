@@ -184,3 +184,20 @@ def test_default_active_tab_is_architect(html: str) -> None:
     assert 'class="dash-tab-panel active" id="panel-architect"' in html, (
         "panel-architect should have the active class by default"
     )
+
+
+# -- Removed elements regression guard -----------------------------------------
+
+REMOVED_STRINGS = [
+    "hero-pill-badge",
+    "hero-badge-wrap",
+    "Deterministic Core",
+    "credibility-section",
+    "cred-pill",
+    "pytest 222",
+]
+
+
+@pytest.mark.parametrize("removed", REMOVED_STRINGS)
+def test_removed_elements_stay_removed(html: str, removed: str) -> None:
+    assert removed not in html, f"Removed element '{removed}' has regressed back into the markup"
