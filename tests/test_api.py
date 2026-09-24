@@ -137,10 +137,31 @@ class TestHealthEndpoint:
         for key in [
             "status", "engine_version", "kb_version",
             "kb_technique_count", "bedrock_available", "uptime_seconds",
+            "kb_stats", "ml_stats",
         ]:
             assert key in data, f"Missing key: {key}"
         assert data["status"] == "healthy"
         assert data["kb_technique_count"] == 19
+
+    def test_kb_stats_matches_loader(self):
+        from storage_advisor.domain.problems import ProblemId
+        from storage_advisor.kb.loader import discover_families, flatten
+
+        resp = client.get("/health")
+        kb = resp.json()["kb_stats"]
+        families = discover_families()
+        effective = flatten(families)
+        assert kb["families"] == len(families)
+        assert kb["effective_techniques"] == len(effective)
+        assert kb["problems"] == len(ProblemId)
+        assert len(kb["categories"]) == 7
+        assert kb["exposure"]["legacy"] + kb["exposure"]["v2_only"] == len(effective)
+
+    def test_ml_stats_contract(self):
+        resp = client.get("/health")
+        ml = resp.json()["ml_stats"]
+        assert ml["metric"] == "second_opinion_holdout_jaccard"
+        assert ml["threshold"] == 0.80
 
 
 class TestInsightsEndpoint:

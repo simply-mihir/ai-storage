@@ -30,6 +30,7 @@ from storage_advisor.domain.scenario import Scenario, upconvert_v1
 from storage_advisor.estimation.impact_estimator import estimate_impact
 from storage_advisor.integrations.bedrock import BedrockExplainer
 from storage_advisor.integrations.pricing import AWSPricingClient
+from storage_advisor.kb.loader import discover_families, flatten
 from storage_advisor.knowledge.technique_catalog import load_techniques
 from storage_advisor.ml.second_opinion import predict_second_opinion
 from storage_advisor.observability.metrics import metrics_collector
@@ -713,10 +714,31 @@ async def get_metrics():
     )
 
 
+def _compute_kb_stats() -> dict[str, Any]:
+    from storage_advisor.domain.problems import ProblemId
+
+    families = discover_families()
+    effective = flatten(families)
+    categories: dict[str, int] = {}
+    for fam in families:
+        cat = fam.category.value if hasattr(fam.category, "value") else str(fam.category)
+        categories[cat] = categories.get(cat, 0) + 1
+    legacy = sum(1 for t in effective if "." not in t.id)
+    v2_only = sum(1 for t in effective if "." in t.id)
+    return {
+        "families": len(families),
+        "effective_techniques": len(effective),
+        "problems": len(ProblemId),
+        "categories": categories,
+        "exposure": {"legacy": legacy, "v2_only": v2_only},
+    }
+
+
 @app.get("/health")
 async def health():
     try:
         uptime = time.monotonic() - _start_time
+        kb_stats = _compute_kb_stats()
         return {
             "status": "healthy",
             "engine_version": ENGINE_VERSION,
@@ -725,6 +747,11 @@ async def health():
             "bedrock_available": _explainer.available,
             "groq_available": _explainer.groq_available,
             "uptime_seconds": round(uptime, 2),
+            "kb_stats": kb_stats,
+            "ml_stats": {
+                "metric": "second_opinion_holdout_jaccard",
+                "threshold": 0.80,
+            },
         }
     except Exception:  # noqa: BLE001
         logger.error("Health check failed:\n%s", traceback.format_exc())
