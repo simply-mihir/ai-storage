@@ -59,6 +59,9 @@ jobs:
           tests/kb/warnings_snapshot.json
           tests/kb/golden_provider_snapshot.json
 
+      - name: Homepage stat drift guard
+        run: python scripts/check_homepage_stats.py
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
