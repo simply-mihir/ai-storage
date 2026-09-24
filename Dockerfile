@@ -8,7 +8,6 @@ RUN pip install --no-cache-dir ".[prod]"
 COPY static/ static/
 COPY data/ data/
 COPY ml/ ml/
-COPY index.html .
 
 EXPOSE 8001
 

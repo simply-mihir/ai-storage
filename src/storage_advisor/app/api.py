@@ -694,7 +694,11 @@ if not _STATIC_DIR.exists():
 
 @app.get("/", include_in_schema=False)
 async def serve_index():
-    return FileResponse(_STATIC_DIR / "index.html", media_type="text/html")
+    return FileResponse(
+        _STATIC_DIR / "index.html",
+        media_type="text/html",
+        headers={"Cache-Control": "no-cache"},
+    )
 
 
 if _STATIC_DIR.exists():
