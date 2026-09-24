@@ -77,3 +77,110 @@ def test_two_theme_toggle_buttons(html: str) -> None:
     assert count >= 2, (
         f"Expected theme toggle in both homepage and dashboard, found {count} instance(s)"
     )
+
+
+# -- Trust defect: empty-first form (Sprint D) ---------------------------------
+
+FORM_INPUTS_NO_VALUE = [
+    "f-domain",
+    "f-users",
+    "f-concurrent",
+    "f-storage",
+    "f-growth",
+    "f-latency",
+    "f-retention",
+    "f-budget",
+]
+
+
+@pytest.mark.parametrize("input_id", FORM_INPUTS_NO_VALUE)
+def test_no_hardcoded_value_attribute(html: str, input_id: str) -> None:
+    """Form inputs must not ship with a hardcoded value= attribute."""
+    import re
+
+    pattern = rf'id="{input_id}"[^>]*\bvalue="[^"]*"'
+    assert not re.search(pattern, html), (
+        f"Input '{input_id}' still has a hardcoded value attribute"
+    )
+
+
+def test_selects_have_disabled_placeholder(html: str) -> None:
+    """Both select elements must have a disabled placeholder first option."""
+    assert 'value="" disabled selected' in html, (
+        "Missing disabled placeholder option in select elements"
+    )
+
+
+EMPTY_STATE_IDS = [
+    "empty-state-recommendations",
+    "empty-state-impact",
+    "empty-state-real-cost",
+    "empty-state-explainability",
+    "empty-state-growth",
+    "empty-state-what-if",
+]
+
+
+@pytest.mark.parametrize("es_id", EMPTY_STATE_IDS)
+def test_empty_state_container(html: str, es_id: str) -> None:
+    """Each results tab must have an empty-state placeholder."""
+    assert f'id="{es_id}"' in html, f"Missing id='{es_id}' (empty-state container)"
+
+
+def test_results_tab_class(html: str) -> None:
+    """All 6 results panels must carry the results-tab class."""
+    for panel in ["recommendations", "impact", "real-cost", "explainability", "growth", "what-if"]:
+        assert f'results-tab" id="panel-{panel}"' in html, (
+            f"panel-{panel} missing results-tab class"
+        )
+
+
+def test_validate_architect_form_function(html: str) -> None:
+    assert "function validateArchitectForm()" in html, (
+        "Missing validateArchitectForm() function"
+    )
+
+
+def test_sync_form_to_state_function(html: str) -> None:
+    assert "function syncFormToState()" in html, (
+        "Missing syncFormToState() function"
+    )
+
+
+def test_clear_architect_form_function(html: str) -> None:
+    assert "function clearArchitectForm()" in html, (
+        "Missing clearArchitectForm() function"
+    )
+
+
+def test_clear_form_button(html: str) -> None:
+    assert 'id="arch-reset-btn"' in html, "Missing Clear Form button"
+    assert "Clear Form" in html, "Button should read 'Clear Form'"
+
+
+def test_no_auto_load_second_opinion(html: str) -> None:
+    """The auto-load fetchSecondOpinion('ai-saas') call must be removed."""
+    assert "// Initial load" not in html, (
+        "Auto-load comment '// Initial load' still present — fetchSecondOpinion auto-load should be removed"
+    )
+
+
+def test_no_auto_load_report_preview(html: str) -> None:
+    """loadReportPreview() must not be called at module scope."""
+    import re
+
+    hits = re.findall(r"^\s*loadReportPreview\(\)", html, re.MULTILINE)
+    assert len(hits) == 0, (
+        "Found top-level loadReportPreview() call — auto-load should be removed"
+    )
+
+
+def test_last_analysis_chip(html: str) -> None:
+    assert 'id="last-analysis-chip"' in html, "Missing last-analysis-chip element"
+
+
+def test_default_active_tab_is_architect(html: str) -> None:
+    """Dashboard should open on the Architect tab, not Recommendations."""
+    assert 'class="dash-tab-panel active" id="panel-architect"' in html, (
+        "panel-architect should have the active class by default"
+    )
