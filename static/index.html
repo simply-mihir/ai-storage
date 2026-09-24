@@ -1067,7 +1067,7 @@
     }
     .knowledge-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 24px;
     }
     .knowledge-card {
@@ -2215,12 +2215,12 @@
         <div class="hero-stage-container">
           <!-- Floating Stat Chips -->
           <div class="stage-stat-chip stat-chip-1">
-            <span class="gradient-text">19</span>
+            <span class="gradient-text" data-stat="hero-techniques">42</span>
             <span>Techniques</span>
           </div>
           <div class="stage-stat-chip stat-chip-2">
-            <span class="gradient-text">ML F1 0.997</span>
-            <span>Detector Precision</span>
+            <span class="gradient-text" data-stat="hero-ml-metric">Jaccard ≥ 0.80</span>
+            <span>ML Holdout</span>
           </div>
           <div class="stage-stat-chip stat-chip-3">
             <span class="gradient-text">24-Month</span>
@@ -2337,19 +2337,19 @@
       <!-- 4.4 Stat Strip: Count-up Gradient Numerals -->
       <section class="stat-strip" aria-label="System Metrics">
         <div class="stat-strip-well">
-          <div class="tabular stat-strip-num gradient-text count-up" data-target="19">19</div>
+          <div class="tabular stat-strip-num gradient-text count-up" data-target="42" data-stat="techniques">42</div>
           <div class="stat-strip-label">Optimization Techniques</div>
         </div>
         <div class="stat-strip-well">
-          <div class="tabular stat-strip-num gradient-text count-up" data-target="222">222</div>
+          <div class="tabular stat-strip-num gradient-text count-up" data-target="510" data-stat="checkpoints">510</div>
           <div class="stat-strip-label">Checkpoints Verified</div>
         </div>
         <div class="stat-strip-well">
-          <div class="tabular stat-strip-num gradient-text count-up" data-target="14">14</div>
+          <div class="tabular stat-strip-num gradient-text count-up" data-target="18" data-stat="detectors">18</div>
           <div class="stat-strip-label">Problem Detectors</div>
         </div>
         <div class="stat-strip-well">
-          <div class="tabular stat-strip-num gradient-text count-up" data-target="9">9</div>
+          <div class="tabular stat-strip-num gradient-text count-up" data-target="5" data-stat="services">5</div>
           <div class="stat-strip-label">AWS Services</div>
         </div>
       </section>
@@ -2491,16 +2491,16 @@
       <!-- 4.9 Knowledge Grid -->
       <section class="knowledge-section" id="knowledge">
         <div class="section-header-center">
-          <div class="section-tag">CATALOG OF 19 TECHNIQUES</div>
+          <div class="section-tag" data-stat="catalog-tag">CATALOG OF 42 TECHNIQUES</div>
           <h2 class="section-h2">Engineered for Extreme Cloud Efficiency</h2>
         </div>
 
-        <div class="knowledge-grid">
-          <div class="knowledge-card neu-raised">
+        <div class="knowledge-grid" id="knowledge-grid">
+          <div class="knowledge-card neu-raised" data-category="storage">
             <div class="k-icon-well">
               <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
             </div>
-            <h3 style="font-size: 1.2rem; color: var(--text);">Storage (7)</h3>
+            <h3 style="font-size: 1.2rem; color: var(--text);">Storage (<span data-stat="cat-storage">9</span>)</h3>
             <p style="font-size: 0.88rem; color: var(--text2);">Intelligent tiering, lifecycle archival policies, compaction, and cold object pruning.</p>
             <div class="k-tags-wrap">
               <span class="k-tag-chip">S3 Glacier</span>
@@ -2509,42 +2509,78 @@
             </div>
           </div>
 
-          <div class="knowledge-card neu-raised">
+          <div class="knowledge-card neu-raised" data-category="database">
+            <div class="k-icon-well">
+              <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+            </div>
+            <h3 style="font-size: 1.2rem; color: var(--text);">Database (<span data-stat="cat-database">5</span>)</h3>
+            <p style="font-size: 0.88rem; color: var(--text2);">Composite indexing, horizontal sharding, read replicas, and schema denormalization strategies.</p>
+            <div class="k-tags-wrap">
+              <span class="k-tag-chip">RDS</span>
+              <span class="k-tag-chip">Indexing</span>
+              <span class="k-tag-chip">Sharding</span>
+            </div>
+          </div>
+
+          <div class="knowledge-card neu-raised" data-category="performance">
             <div class="k-icon-well">
               <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             </div>
-            <h3 style="font-size: 1.2rem; color: var(--text);">Performance (6)</h3>
-            <p style="font-size: 0.88rem; color: var(--text2);">In-memory write-behind caches, composite indexing, partition pruning, and pre-computed views.</p>
+            <h3 style="font-size: 1.2rem; color: var(--text);">Performance (<span data-stat="cat-performance">5</span>)</h3>
+            <p style="font-size: 0.88rem; color: var(--text2);">In-memory caches, partition pruning, pre-computed views, and write-behind optimization.</p>
             <div class="k-tags-wrap">
               <span class="k-tag-chip">ElastiCache</span>
               <span class="k-tag-chip">Pruning</span>
-              <span class="k-tag-chip">Read Replicas</span>
+              <span class="k-tag-chip">Materialized Views</span>
             </div>
           </div>
 
-          <div class="knowledge-card neu-raised">
+          <div class="knowledge-card neu-raised" data-category="analytics">
+            <div class="k-icon-well">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <h3 style="font-size: 1.2rem; color: var(--text);">Analytics (<span data-stat="cat-analytics">3</span>)</h3>
+            <p style="font-size: 0.88rem; color: var(--text2);">Columnar formats, aggregation pipelines, and real-time streaming analytics.</p>
+            <div class="k-tags-wrap">
+              <span class="k-tag-chip">Redshift</span>
+              <span class="k-tag-chip">DuckDB</span>
+              <span class="k-tag-chip">Streaming</span>
+            </div>
+          </div>
+
+          <div class="knowledge-card neu-raised" data-category="security">
+            <div class="k-icon-well">
+              <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h3 style="font-size: 1.2rem; color: var(--text);">Security (<span data-stat="cat-security">2</span>)</h3>
+            <p style="font-size: 0.88rem; color: var(--text2);">Encryption at rest and in transit, IAM policy hardening, and secrets management.</p>
+            <div class="k-tags-wrap">
+              <span class="k-tag-chip">KMS</span>
+              <span class="k-tag-chip">IAM</span>
+            </div>
+          </div>
+
+          <div class="knowledge-card neu-raised" data-category="reliability">
             <div class="k-icon-well">
               <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
-            <h3 style="font-size: 1.2rem; color: var(--text);">Reliability (3)</h3>
-            <p style="font-size: 0.88rem; color: var(--text2);">Multi-region replication, continuous point-in-time recovery, and zero-data-loss failover topologies.</p>
+            <h3 style="font-size: 1.2rem; color: var(--text);">Reliability (<span data-stat="cat-reliability">1</span>)</h3>
+            <p style="font-size: 0.88rem; color: var(--text2);">Multi-region replication, continuous point-in-time recovery, and zero-data-loss failover.</p>
             <div class="k-tags-wrap">
               <span class="k-tag-chip">Cross-Region</span>
               <span class="k-tag-chip">PITR</span>
-              <span class="k-tag-chip">Aurora Global</span>
             </div>
           </div>
 
-          <div class="knowledge-card neu-raised">
+          <div class="knowledge-card neu-raised" data-category="architecture">
             <div class="k-icon-well">
               <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             </div>
-            <h3 style="font-size: 1.2rem; color: var(--text);">Architecture (3)</h3>
-            <p style="font-size: 0.88rem; color: var(--text2);">Command Query Responsibility Segregation, automated data lake sharding, and event streaming.</p>
+            <h3 style="font-size: 1.2rem; color: var(--text);">Architecture (<span data-stat="cat-architecture">1</span>)</h3>
+            <p style="font-size: 0.88rem; color: var(--text2);">Command Query Responsibility Segregation and event-driven decomposition patterns.</p>
             <div class="k-tags-wrap">
               <span class="k-tag-chip">CQRS</span>
-              <span class="k-tag-chip">Sharding</span>
-              <span class="k-tag-chip">Serverless</span>
+              <span class="k-tag-chip">Event Sourcing</span>
             </div>
           </div>
         </div>
@@ -4836,10 +4872,35 @@
           clearTimeout(timeoutId);
           if (!res.ok) {
             state.offlineDemo = true;
+            return;
           }
+          const data = await res.json();
+          if (data.kb_stats) bindLiveStats(data);
         } catch (e) {
           state.offlineDemo = true;
         }
+      }
+
+      function bindLiveStats(health) {
+        const kb = health.kb_stats;
+        if (!kb) return;
+        const set = (sel, v) => { const el = document.querySelector(`[data-stat="${sel}"]`); if (el) el.textContent = v; };
+        set('techniques', kb.effective_techniques);
+        set('hero-techniques', kb.effective_techniques);
+        set('detectors', kb.problems);
+        set('catalog-tag', `CATALOG OF ${kb.effective_techniques} TECHNIQUES`);
+        if (kb.categories) {
+          for (const [cat, count] of Object.entries(kb.categories)) {
+            set(`cat-${cat}`, count);
+          }
+        }
+        if (health.ml_stats) {
+          set('hero-ml-metric', `${health.ml_stats.metric.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} ≥ ${health.ml_stats.threshold}`);
+        }
+        document.querySelectorAll('.count-up[data-stat]').forEach(el => {
+          const v = parseInt(el.textContent, 10);
+          if (!isNaN(v)) el.setAttribute('data-target', v);
+        });
       }
 
       function downloadTerraformFile() {
