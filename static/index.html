@@ -1901,6 +1901,78 @@
     .pill-group-error .form-error-text {
       display: block;
     }
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 340px;
+      text-align: center;
+      gap: 16px;
+      padding: 40px 20px;
+    }
+    .empty-state-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--well);
+      box-shadow: var(--shadow-inset);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .empty-state-icon svg {
+      width: 28px;
+      height: 28px;
+      stroke: var(--text3);
+      fill: none;
+      stroke-width: 1.5;
+    }
+    .empty-state h3 {
+      font-size: 1.15rem;
+      color: var(--text);
+      font-weight: 700;
+      margin: 0;
+    }
+    .empty-state p {
+      font-size: 0.88rem;
+      color: var(--text2);
+      max-width: 400px;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .results-tab:not(.has-results) > *:not(.empty-state) {
+      display: none;
+    }
+    .results-tab.has-results > .empty-state {
+      display: none;
+    }
+    .last-analysis-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      background: var(--well);
+      box-shadow: var(--shadow-inset-sm);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text3);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .last-analysis-chip:hover {
+      color: var(--text);
+    }
+    .last-analysis-chip button {
+      background: none;
+      border: none;
+      color: var(--text3);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 0;
+      line-height: 1;
+    }
     .sticky-action-bar {
       position: sticky;
       bottom: 20px;
@@ -2528,8 +2600,8 @@
 
         <!-- 7-Tab Bar (Role=Tablist) -->
         <nav class="tab-bar-well" role="tablist" aria-label="Architecture Dashboard Tabs">
-          <button class="tab-pill-btn" role="tab" id="tab-btn-architect" aria-selected="false" aria-controls="panel-architect">Architect</button>
-          <button class="tab-pill-btn active" role="tab" id="tab-btn-recommendations" aria-selected="true" aria-controls="panel-recommendations">Recommendations</button>
+          <button class="tab-pill-btn active" role="tab" id="tab-btn-architect" aria-selected="true" aria-controls="panel-architect">Architect</button>
+          <button class="tab-pill-btn" role="tab" id="tab-btn-recommendations" aria-selected="false" aria-controls="panel-recommendations">Recommendations</button>
           <button class="tab-pill-btn" role="tab" id="tab-btn-impact" aria-selected="false" aria-controls="panel-impact">Impact</button>
           <button class="tab-pill-btn" role="tab" id="tab-btn-real-cost" aria-selected="false" aria-controls="panel-real-cost">Real Cost</button>
           <button class="tab-pill-btn" role="tab" id="tab-btn-explainability" aria-selected="false" aria-controls="panel-explainability">Explainability</button>
@@ -2538,8 +2610,12 @@
           <button class="tab-pill-btn" role="tab" id="tab-btn-insights" aria-selected="false" aria-controls="panel-insights">Insights</button>
         </nav>
 
-        <!-- Right Controls: Status Pill + Theme Circle + Home Circle -->
+        <!-- Right Controls: Last Analysis Chip + Status Pill + Theme Circle + Home Circle -->
         <div class="dash-right-controls">
+          <span class="last-analysis-chip" id="last-analysis-chip" style="display: none;" title="Showing cached results from last analysis">
+            Last analysis
+            <button id="clear-last-analysis" aria-label="Clear saved analysis">&times;</button>
+          </span>
           <div class="engine-status-pill" id="engine-status-pill" title="Engine Status">
             <span class="status-led" aria-hidden="true"></span>
             <span id="engine-status-text">Live Analysis</span>
@@ -2558,7 +2634,15 @@
       <!-- ====================================================================
            TAB 1: RECOMMENDATIONS (DEFAULT)
            ==================================================================== -->
-      <section class="dash-tab-panel active" id="panel-recommendations" role="tabpanel" aria-labelledby="tab-btn-recommendations">
+      <section class="dash-tab-panel results-tab" id="panel-recommendations" role="tabpanel" aria-labelledby="tab-btn-recommendations">
+        <div class="empty-state" id="empty-state-recommendations">
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+          </div>
+          <h3>No analysis yet</h3>
+          <p>Configure your workload in the <strong>Architect</strong> tab and click <strong>Analyze Architecture</strong> to generate recommendations.</p>
+          <button class="neu-btn pill pill-accent" onclick="switchTab('architect')">Go to Architect</button>
+        </div>
         <!-- 6.1 Header Card -->
         <div class="rec-header-card neu-raised">
           <div>
@@ -3082,7 +3166,7 @@
       <!-- ====================================================================
            TAB 2: ARCHITECT
            ==================================================================== -->
-      <section class="dash-tab-panel" id="panel-architect" role="tabpanel" aria-labelledby="tab-btn-architect">
+      <section class="dash-tab-panel active" id="panel-architect" role="tabpanel" aria-labelledby="tab-btn-architect">
         <div class="architect-layout">
           <!-- Left: Natural Language Input + Presets -->
           <div class="savings-card neu-raised">
@@ -3260,7 +3344,15 @@
       <!-- ====================================================================
            TAB 3: IMPACT
            ==================================================================== -->
-      <section class="dash-tab-panel" id="panel-impact" role="tabpanel" aria-labelledby="tab-btn-impact">
+      <section class="dash-tab-panel results-tab" id="panel-impact" role="tabpanel" aria-labelledby="tab-btn-impact">
+        <div class="empty-state" id="empty-state-impact">
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <h3>Impact metrics unavailable</h3>
+          <p>Run an analysis to see storage, cost, and latency reduction estimates.</p>
+          <button class="neu-btn pill pill-accent" onclick="switchTab('architect')">Go to Architect</button>
+        </div>
         <!-- Three KPI Raised Cards with Inset Progress Bars -->
         <div class="impact-kpi-grid">
           <div class="savings-card neu-raised">
@@ -3320,7 +3412,15 @@
       <!-- ====================================================================
            TAB 4: REAL COST
            ==================================================================== -->
-      <section class="dash-tab-panel" id="panel-real-cost" role="tabpanel" aria-labelledby="tab-btn-real-cost">
+      <section class="dash-tab-panel results-tab" id="panel-real-cost" role="tabpanel" aria-labelledby="tab-btn-real-cost">
+        <div class="empty-state" id="empty-state-real-cost">
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <h3>Cost breakdown unavailable</h3>
+          <p>Run an analysis to see per-service cost estimates and region comparisons.</p>
+          <button class="neu-btn pill pill-accent" onclick="switchTab('architect')">Go to Architect</button>
+        </div>
         <div class="cost-summary-card">
           <div>
             <div style="font-size: 0.85rem; font-weight: 600; color: var(--text2); margin-bottom: 4px;">Total Estimated Monthly Cost</div>
@@ -3463,7 +3563,15 @@
       <!-- ====================================================================
            TAB 5: EXPLAINABILITY
            ==================================================================== -->
-      <section class="dash-tab-panel" id="panel-explainability" role="tabpanel" aria-labelledby="tab-btn-explainability">
+      <section class="dash-tab-panel results-tab" id="panel-explainability" role="tabpanel" aria-labelledby="tab-btn-explainability">
+        <div class="empty-state" id="empty-state-explainability">
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </div>
+          <h3>Explainability unavailable</h3>
+          <p>Run an analysis to see architectural rationale and decision explanations.</p>
+          <button class="neu-btn pill pill-accent" onclick="switchTab('architect')">Go to Architect</button>
+        </div>
         <!-- Narrative Card with Badge Pill -->
         <div class="savings-card neu-raised" style="margin-bottom: 24px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
@@ -3574,7 +3682,15 @@
       <!-- ====================================================================
            TAB 6: GROWTH
            ==================================================================== -->
-      <section class="dash-tab-panel" id="panel-growth" role="tabpanel" aria-labelledby="tab-btn-growth">
+      <section class="dash-tab-panel results-tab" id="panel-growth" role="tabpanel" aria-labelledby="tab-btn-growth">
+        <div class="empty-state" id="empty-state-growth">
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <h3>Growth projections unavailable</h3>
+          <p>Run an analysis to see 24-month cost and capacity projections.</p>
+          <button class="neu-btn pill pill-accent" onclick="switchTab('architect')">Go to Architect</button>
+        </div>
         <div class="stat-strip" style="margin-bottom: 24px; padding: 0;">
           <div class="stat-strip-well">
             <div class="tabular stat-strip-num gradient-text" id="growth-m24-cost-val">$7,890</div>
@@ -3644,7 +3760,15 @@
       <!-- ====================================================================
            TAB 7: WHAT-IF
            ==================================================================== -->
-      <section class="dash-tab-panel" id="panel-what-if" role="tabpanel" aria-labelledby="tab-btn-what-if">
+      <section class="dash-tab-panel results-tab" id="panel-what-if" role="tabpanel" aria-labelledby="tab-btn-what-if">
+        <div class="empty-state" id="empty-state-what-if">
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+          </div>
+          <h3>Simulation unavailable</h3>
+          <p>Run an analysis to unlock what-if simulation sliders.</p>
+          <button class="neu-btn pill pill-accent" onclick="switchTab('architect')">Go to Architect</button>
+        </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
           <!-- Left: Three Slider Cards -->
           <div>
@@ -4034,7 +4158,7 @@
       const state = {
         theme: localStorage.getItem('theme') || 'dark',
         currentView: 'homepage', // 'homepage' | 'dashboard'
-        activeTab: 'recommendations',
+        activeTab: 'architect',
         offlineDemo: false,
         scenario: {
           business_domain: '',
@@ -4940,9 +5064,44 @@ resource "aws_rds_cluster" "aurora_cluster" {
         };
       }
 
+      function markResultsReady() {
+        document.querySelectorAll('.results-tab').forEach(p => p.classList.add('has-results'));
+      }
+
+      function saveAnalysis() {
+        try {
+          localStorage.setItem('lastAnalysis', JSON.stringify(state.scenario));
+        } catch {}
+      }
+
+      function restoreLastAnalysis() {
+        try {
+          const saved = localStorage.getItem('lastAnalysis');
+          if (!saved) return;
+          const scenario = JSON.parse(saved);
+          if (!scenario || !scenario.business_domain) return;
+          state.scenario = scenario;
+          markResultsReady();
+          const chip = document.getElementById('last-analysis-chip');
+          if (chip) chip.style.display = '';
+        } catch {}
+      }
+
+      document.getElementById('clear-last-analysis')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        try { localStorage.removeItem('lastAnalysis'); } catch {}
+        document.querySelectorAll('.results-tab').forEach(p => p.classList.remove('has-results'));
+        const chip = document.getElementById('last-analysis-chip');
+        if (chip) chip.style.display = 'none';
+      });
+
       document.getElementById('arch-analyze-btn')?.addEventListener('click', () => {
         if (validateArchitectForm()) {
           syncFormToState();
+          markResultsReady();
+          saveAnalysis();
+          const chip = document.getElementById('last-analysis-chip');
+          if (chip) chip.style.display = '';
           switchTab('recommendations');
         }
       });
@@ -5068,13 +5227,12 @@ resource "aws_rds_cluster" "aurora_cluster" {
           document.getElementById('report-preview-status').textContent = 'Mock';
         }
       }
-      loadReportPreview();
-
       // Check Health and init Homepage Chart
       window.addEventListener('DOMContentLoaded', () => {
         initHomepageMiniChart();
         checkEngineHealth();
         refreshMoney();
+        restoreLastAnalysis();
       });
 
     
@@ -5516,9 +5674,6 @@ resource "aws_rds_cluster" "aurora_cluster" {
           updateSecondOpinionCard(fallback);
         }
       }
-
-      // Initial load
-      fetchSecondOpinion('ai-saas');
 
       // Re-run button listener
       document.getElementById('rec-rerun-btn')?.addEventListener('click', () => {
