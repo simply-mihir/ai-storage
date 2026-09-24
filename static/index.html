@@ -1855,6 +1855,52 @@
       color: #FFF;
       box-shadow: 0 4px 14px rgba(249,115,22,0.4);
     }
+    .form-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .form-input-wrap .form-input {
+      flex: 1;
+      padding-right: 56px;
+    }
+    .form-input-suffix {
+      position: absolute;
+      right: 12px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text3);
+      pointer-events: none;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .form-helper {
+      font-size: 0.72rem;
+      color: var(--text3);
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+    .pill-helper {
+      font-size: 0.72rem;
+      color: var(--text3);
+      margin-top: 6px;
+    }
+    .form-group.has-error .form-input,
+    .form-group.has-error .form-select {
+      box-shadow: var(--shadow-inset-sm), inset 0 0 0 1.5px var(--neg);
+    }
+    .form-error-text {
+      font-size: 0.72rem;
+      color: var(--neg);
+      margin-top: 2px;
+      display: none;
+    }
+    .form-group.has-error .form-error-text {
+      display: block;
+    }
+    .pill-group-error .form-error-text {
+      display: block;
+    }
     .sticky-action-bar {
       position: sticky;
       bottom: 20px;
@@ -3081,78 +3127,121 @@
               <div class="form-grid-2col">
                 <div class="form-group">
                   <label for="f-domain">Business Domain</label>
-                  <input type="text" id="f-domain" class="form-input" value="AI SaaS" />
+                  <input type="text" id="f-domain" class="form-input" placeholder="e.g. AI SaaS, Fintech, Healthcare" aria-describedby="f-domain-err" />
+                  <span class="form-error-text" id="f-domain-err">Required</span>
                 </div>
                 <div class="form-group">
                   <label for="f-size">Company Size</label>
-                  <select id="f-size" class="form-select">
+                  <select id="f-size" class="form-select" aria-describedby="f-size-err">
+                    <option value="" disabled selected>Select company size</option>
                     <option value="STARTUP">Startup</option>
-                    <option value="MEDIUM" selected>Growth / Medium</option>
+                    <option value="MEDIUM">Growth / Medium</option>
                     <option value="ENTERPRISE">Enterprise</option>
                   </select>
+                  <span class="form-error-text" id="f-size-err">Required</span>
                 </div>
                 <div class="form-group">
                   <label for="f-users">Expected Users</label>
-                  <input type="number" id="f-users" class="form-input tabular" value="25000" />
+                  <div class="form-input-wrap">
+                    <input type="number" id="f-users" class="form-input tabular" placeholder="e.g. 25000" aria-describedby="f-users-help f-users-err" />
+                    <span class="form-input-suffix">users</span>
+                  </div>
+                  <span class="form-helper" id="f-users-help">Total registered user base</span>
+                  <span class="form-error-text" id="f-users-err">Required — must be &gt; 0</span>
                 </div>
                 <div class="form-group">
                   <label for="f-concurrent">Concurrent Users</label>
-                  <input type="number" id="f-concurrent" class="form-input tabular" value="3500" />
+                  <div class="form-input-wrap">
+                    <input type="number" id="f-concurrent" class="form-input tabular" placeholder="e.g. 3500" aria-describedby="f-concurrent-help f-concurrent-err" />
+                    <span class="form-input-suffix">users</span>
+                  </div>
+                  <span class="form-helper" id="f-concurrent-help">Peak simultaneous active sessions</span>
+                  <span class="form-error-text" id="f-concurrent-err">Required — must be &gt; 0</span>
                 </div>
                 <div class="form-group">
-                  <label for="f-storage">Current Storage (GB)</label>
-                  <input type="number" id="f-storage" class="form-input tabular" value="12000" />
+                  <label for="f-storage">Current Storage</label>
+                  <div class="form-input-wrap">
+                    <input type="number" id="f-storage" class="form-input tabular" placeholder="e.g. 12000" aria-describedby="f-storage-help f-storage-err" />
+                    <span class="form-input-suffix">GB</span>
+                  </div>
+                  <span class="form-helper" id="f-storage-help">Total data volume today</span>
+                  <span class="form-error-text" id="f-storage-err">Required — must be &gt; 0</span>
                 </div>
                 <div class="form-group">
-                  <label for="f-growth">Daily Growth (GB)</label>
-                  <input type="number" id="f-growth" class="form-input tabular" value="85" />
+                  <label for="f-growth">Daily Growth</label>
+                  <div class="form-input-wrap">
+                    <input type="number" id="f-growth" class="form-input tabular" placeholder="e.g. 85" aria-describedby="f-growth-help f-growth-err" />
+                    <span class="form-input-suffix">GB/day</span>
+                  </div>
+                  <span class="form-helper" id="f-growth-help">Average daily data ingestion</span>
+                  <span class="form-error-text" id="f-growth-err">Required — must be &gt; 0</span>
                 </div>
                 <div class="form-group">
                   <label for="f-rw-ratio">Read / Write Ratio</label>
-                  <select id="f-rw-ratio" class="form-select">
+                  <select id="f-rw-ratio" class="form-select" aria-describedby="f-rw-ratio-err">
+                    <option value="" disabled selected>Select ratio</option>
                     <option value="90:10">90% Read / 10% Write</option>
-                    <option value="80:20" selected>80% Read / 20% Write</option>
+                    <option value="80:20">80% Read / 20% Write</option>
                     <option value="50:50">50% Read / 50% Write</option>
                     <option value="20:80">20% Read / 80% Write (Write Heavy)</option>
                   </select>
+                  <span class="form-error-text" id="f-rw-ratio-err">Required</span>
                 </div>
                 <div class="form-group">
-                  <label for="f-latency">Latency SLA (ms)</label>
-                  <input type="number" id="f-latency" class="form-input tabular" value="45" />
+                  <label for="f-latency">Latency SLA</label>
+                  <div class="form-input-wrap">
+                    <input type="number" id="f-latency" class="form-input tabular" placeholder="e.g. 45" aria-describedby="f-latency-help f-latency-err" />
+                    <span class="form-input-suffix">ms</span>
+                  </div>
+                  <span class="form-helper" id="f-latency-help">Maximum acceptable P95 read latency</span>
+                  <span class="form-error-text" id="f-latency-err">Required — must be &gt; 0</span>
                 </div>
                 <div class="form-group">
-                  <label for="f-retention">Retention (Months)</label>
-                  <input type="number" id="f-retention" class="form-input tabular" value="36" />
+                  <label for="f-retention">Retention</label>
+                  <div class="form-input-wrap">
+                    <input type="number" id="f-retention" class="form-input tabular" placeholder="e.g. 36" aria-describedby="f-retention-help f-retention-err" />
+                    <span class="form-input-suffix">months</span>
+                  </div>
+                  <span class="form-helper" id="f-retention-help">Minimum data retention period</span>
+                  <span class="form-error-text" id="f-retention-err">Required — must be &gt; 0</span>
                 </div>
                 <div class="form-group">
-                  <label for="f-budget">Budget Ceiling ($/mo)</label>
-                  <input type="number" id="f-budget" class="form-input tabular" value="8500" />
+                  <label for="f-budget">Budget Ceiling</label>
+                  <div class="form-input-wrap">
+                    <input type="number" id="f-budget" class="form-input tabular" placeholder="e.g. 8500" aria-describedby="f-budget-help f-budget-err" />
+                    <span class="form-input-suffix">$/mo</span>
+                  </div>
+                  <span class="form-helper" id="f-budget-help">Maximum monthly infrastructure spend</span>
+                  <span class="form-error-text" id="f-budget-err">Required — must be &gt; 0</span>
                 </div>
               </div>
 
               <!-- Pill Toggle Data Types -->
-              <div style="margin-bottom: 18px;">
+              <div style="margin-bottom: 18px;" id="data-type-group">
                 <label style="font-size: 0.78rem; font-weight: 600; color: var(--text2); display: block; margin-bottom: 8px;">DATA TYPES</label>
                 <div class="pill-toggles-wrap" id="data-type-pills">
-                  <button class="pill-checkbox-btn active" data-val="TEXT">TEXT</button>
-                  <button class="pill-checkbox-btn active" data-val="VECTOR">VECTOR</button>
-                  <button class="pill-checkbox-btn active" data-val="JSON/OBJECT">JSON/OBJECT</button>
+                  <button class="pill-checkbox-btn" data-val="TEXT">TEXT</button>
+                  <button class="pill-checkbox-btn" data-val="VECTOR">VECTOR</button>
+                  <button class="pill-checkbox-btn" data-val="JSON/OBJECT">JSON/OBJECT</button>
                   <button class="pill-checkbox-btn" data-val="TIMESERIES">TIMESERIES</button>
-                  <button class="pill-checkbox-btn active" data-val="BINARY/AUDIO">BINARY/AUDIO</button>
+                  <button class="pill-checkbox-btn" data-val="BINARY/AUDIO">BINARY/AUDIO</button>
                   <button class="pill-checkbox-btn" data-val="VIDEO">VIDEO</button>
                 </div>
+                <span class="pill-helper">Select all that apply</span>
+                <span class="form-error-text" id="data-type-pills-err">Select at least one data type</span>
               </div>
 
               <!-- Chip Multi-Select Compliance -->
               <div>
                 <label style="font-size: 0.78rem; font-weight: 600; color: var(--text2); display: block; margin-bottom: 8px;">COMPLIANCE REQUIREMENTS</label>
                 <div class="pill-toggles-wrap" id="compliance-chips">
-                  <button class="pill-checkbox-btn active" data-val="SOC2">SOC2</button>
+                  <button class="pill-checkbox-btn" data-val="SOC2">SOC2</button>
                   <button class="pill-checkbox-btn" data-val="HIPAA">HIPAA</button>
-                  <button class="pill-checkbox-btn active" data-val="GDPR">GDPR</button>
+                  <button class="pill-checkbox-btn" data-val="GDPR">GDPR</button>
                   <button class="pill-checkbox-btn" data-val="PCI-DSS">PCI-DSS</button>
                   <button class="pill-checkbox-btn" data-val="ISO27001">ISO27001</button>
                 </div>
+                <span class="pill-helper">Optional — select if applicable</span>
               </div>
             </div>
           </div>
@@ -3160,7 +3249,7 @@
 
         <!-- Sticky Action Bar -->
         <div class="sticky-action-bar">
-          <button class="neu-btn ghost-cta" id="arch-reset-btn" style="padding: 10px 24px; font-size: 0.9rem;">Reset Defaults</button>
+          <button class="neu-btn ghost-cta" id="arch-reset-btn" style="padding: 10px 24px; font-size: 0.9rem;">Clear Form</button>
           <button class="neu-btn pill pill-accent" id="arch-analyze-btn" style="padding: 12px 32px; font-size: 0.95rem; background: var(--hero);">
             <span>Analyze Architecture</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -3948,18 +4037,18 @@
         activeTab: 'recommendations',
         offlineDemo: false,
         scenario: {
-          business_domain: 'AI SaaS',
-          company_size: 'MEDIUM',
-          expected_users: 25000,
-          concurrent_users: 3500,
-          current_storage_gb: 12000,
-          daily_growth_gb: 85,
-          read_write_ratio: '80:20',
-          latency_sla_ms: 45,
-          retention_months: 36,
-          budget_ceiling_usd: 8500,
-          data_types: ['TEXT', 'VECTOR', 'JSON/OBJECT', 'BINARY/AUDIO'],
-          compliance: ['SOC2', 'GDPR']
+          business_domain: '',
+          company_size: '',
+          expected_users: null,
+          concurrent_users: null,
+          current_storage_gb: null,
+          daily_growth_gb: null,
+          read_write_ratio: '',
+          latency_sla_ms: null,
+          retention_months: null,
+          budget_ceiling_usd: null,
+          data_types: [],
+          compliance: []
         }
       };
 
@@ -4765,8 +4854,101 @@ resource "aws_rds_cluster" "aurora_cluster" {
         });
       });
 
+      function validateArchitectForm() {
+        let valid = true;
+        document.querySelectorAll('#panel-architect .form-group').forEach(g => g.classList.remove('has-error'));
+        const dtErrEl = document.getElementById('data-type-pills-err');
+        if (dtErrEl) dtErrEl.style.display = 'none';
+        document.getElementById('data-type-group')?.classList.remove('pill-group-error');
+
+        const textFields = ['f-domain'];
+        const selectFields = ['f-size', 'f-rw-ratio'];
+        const numberFields = ['f-users', 'f-concurrent', 'f-storage', 'f-growth', 'f-latency', 'f-retention', 'f-budget'];
+
+        textFields.forEach(id => {
+          const el = document.getElementById(id);
+          if (!el || !el.value.trim()) {
+            el?.closest('.form-group')?.classList.add('has-error');
+            if (el) el.setAttribute('aria-invalid', 'true');
+            valid = false;
+          } else if (el) { el.removeAttribute('aria-invalid'); }
+        });
+
+        selectFields.forEach(id => {
+          const el = document.getElementById(id);
+          if (!el || !el.value) {
+            el?.closest('.form-group')?.classList.add('has-error');
+            if (el) el.setAttribute('aria-invalid', 'true');
+            valid = false;
+          } else if (el) { el.removeAttribute('aria-invalid'); }
+        });
+
+        numberFields.forEach(id => {
+          const el = document.getElementById(id);
+          if (!el || !el.value || Number(el.value) <= 0) {
+            el?.closest('.form-group')?.classList.add('has-error');
+            if (el) el.setAttribute('aria-invalid', 'true');
+            valid = false;
+          } else if (el) { el.removeAttribute('aria-invalid'); }
+        });
+
+        if (document.querySelectorAll('#data-type-pills .pill-checkbox-btn.active').length === 0) {
+          if (dtErrEl) dtErrEl.style.display = 'block';
+          document.getElementById('data-type-group')?.classList.add('pill-group-error');
+          valid = false;
+        }
+
+        return valid;
+      }
+
+      function syncFormToState() {
+        state.scenario.business_domain = document.getElementById('f-domain').value.trim();
+        state.scenario.company_size = document.getElementById('f-size').value;
+        state.scenario.expected_users = Number(document.getElementById('f-users').value);
+        state.scenario.concurrent_users = Number(document.getElementById('f-concurrent').value);
+        state.scenario.current_storage_gb = Number(document.getElementById('f-storage').value);
+        state.scenario.daily_growth_gb = Number(document.getElementById('f-growth').value);
+        state.scenario.read_write_ratio = document.getElementById('f-rw-ratio').value;
+        state.scenario.latency_sla_ms = Number(document.getElementById('f-latency').value);
+        state.scenario.retention_months = Number(document.getElementById('f-retention').value);
+        state.scenario.budget_ceiling_usd = Number(document.getElementById('f-budget').value);
+        state.scenario.data_types = [...document.querySelectorAll('#data-type-pills .pill-checkbox-btn.active')].map(b => b.dataset.val);
+        state.scenario.compliance = [...document.querySelectorAll('#compliance-chips .pill-checkbox-btn.active')].map(b => b.dataset.val);
+      }
+
+      function clearArchitectForm() {
+        ['f-domain','f-users','f-concurrent','f-storage','f-growth','f-latency','f-retention','f-budget'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        ['f-size','f-rw-ratio'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        document.querySelectorAll('.pill-checkbox-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#panel-architect .form-group').forEach(g => g.classList.remove('has-error'));
+        document.querySelectorAll('#panel-architect [aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
+        const dtErrEl = document.getElementById('data-type-pills-err');
+        if (dtErrEl) dtErrEl.style.display = 'none';
+        document.getElementById('data-type-group')?.classList.remove('pill-group-error');
+        document.getElementById('arch-prompt-input').value = '';
+        state.scenario = {
+          business_domain: '', company_size: '', expected_users: null, concurrent_users: null,
+          current_storage_gb: null, daily_growth_gb: null, read_write_ratio: '',
+          latency_sla_ms: null, retention_months: null, budget_ceiling_usd: null,
+          data_types: [], compliance: []
+        };
+      }
+
       document.getElementById('arch-analyze-btn')?.addEventListener('click', () => {
-        switchTab('recommendations');
+        if (validateArchitectForm()) {
+          syncFormToState();
+          switchTab('recommendations');
+        }
+      });
+
+      document.getElementById('arch-reset-btn')?.addEventListener('click', () => {
+        clearArchitectForm();
       });
 
       // Export Report dropdown toggle
